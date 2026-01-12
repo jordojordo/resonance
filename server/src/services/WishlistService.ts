@@ -108,9 +108,9 @@ export class WishlistService {
   }
 
   /**
-   * Read all wishlist entries
+   * Read all wishlist entries as raw strings
    */
-  readAll(): string[] {
+  readAllRaw(): string[] {
     if (!fs.existsSync(this.wishlistPath)) {
       return [];
     }
@@ -118,6 +118,34 @@ export class WishlistService {
     const content = fs.readFileSync(this.wishlistPath, 'utf-8');
 
     return content.split('\n').filter(line => line.trim().length > 0);
+  }
+
+  /**
+   * Read all wishlist entries and parse them into structured objects
+   */
+  readAll(): Array<{ artist: string; title: string; type: 'album' | 'track' }> {
+    const lines = this.readAllRaw();
+    const entries: Array<{ artist: string; title: string; type: 'album' | 'track' }> = [];
+
+    for (const line of lines) {
+      const isAlbum = line.startsWith('a:');
+      const content = isAlbum ? line.slice(2) : line;
+
+      // Parse format: "Artist - Title"
+      const match = content.match(/^"(.+) - (.+)"$/);
+
+      if (match) {
+        const [, artist, title] = match;
+
+        entries.push({
+          artist: artist.replace(/\\"/g, '"'), // Unescape quotes
+          title:  title.replace(/\\"/g, '"'),
+          type:   isAlbum ? 'album' : 'track',
+        });
+      }
+    }
+
+    return entries;
   }
 }
 

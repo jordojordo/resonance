@@ -20,6 +20,8 @@ export default defineConfigWithVueTs(
   pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,
 
+  { languageOptions: { parserOptions: { tsconfigRootDir: import.meta.dirname } } },
+
   {
     ...pluginVitest.configs.recommended,
     files: ['src/**/__tests__/*'],

@@ -7,6 +7,10 @@ export default defineConfig({
   plugins: [vue()],
   resolve: { alias: { '@': path.resolve(__dirname, './src') } },
   server:  {
+    fs: {
+      // Allow serving files from monorepo root node_modules (for primeicons, etc.)
+      allow: ['..'],
+    },
     proxy: {
       '/api': {
         target:       'http://localhost:8080',

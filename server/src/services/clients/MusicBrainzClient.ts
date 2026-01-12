@@ -210,6 +210,107 @@ export class MusicBrainzClient {
       return [];
     }
   }
+
+  /**
+   * Search for albums by query string
+   */
+  async searchAlbums(
+    query: string,
+    limit: number = 20
+  ): Promise<{ results: Array<{ mbid: string; title: string; artist: string; type: string | null; year: number | null }>; total: number }> {
+    const url = `${ BASE_URL }/release-group`;
+
+    try {
+      const response = await axios.get(url, {
+        headers: { 'User-Agent': USER_AGENT },
+        params:  {
+          query,
+          limit,
+          fmt: 'json',
+        },
+        timeout: 15000,
+      });
+
+      const releaseGroups = response.data['release-groups'] || [];
+      const total = response.data['release-group-count'] || releaseGroups.length;
+
+      const results = releaseGroups.map((rg: any) => {
+        const artistCredit = rg['artist-credit'] || [];
+        const artist = artistCredit.map((ac: any) => ac.artist?.name || '').join(' & ') || 'Unknown Artist';
+        const firstReleaseDate = rg['first-release-date'] || '';
+        const year = firstReleaseDate ? parseInt(firstReleaseDate.substring(0, 4), 10) : null;
+
+        return {
+          mbid:   rg.id,
+          title:  rg.title,
+          artist,
+          type:   rg['primary-type'] || null,
+          year:   isNaN(year!) ? null : year,
+        };
+      });
+
+      return { results, total };
+    } catch(error) {
+      if (axios.isAxiosError(error)) {
+        logger.error(`Failed to search albums for "${ query }": ${ error.message }`);
+      } else {
+        logger.error(`Failed to search albums for "${ query }": ${ String(error) }`);
+      }
+
+      return { results: [], total: 0 };
+    }
+  }
+
+  /**
+   * Search for artists by query string
+   */
+  async searchArtists(
+    query: string,
+    limit: number = 20
+  ): Promise<{ results: Array<{ mbid: string; name: string; country: string | null; type: string | null; beginYear: number | null; endYear: number | null; disambiguation: string | null }>; total: number }> {
+    const url = `${ BASE_URL }/artist`;
+
+    try {
+      const response = await axios.get(url, {
+        headers: { 'User-Agent': USER_AGENT },
+        params:  {
+          query,
+          limit,
+          fmt: 'json',
+        },
+        timeout: 15000,
+      });
+
+      const artists = response.data.artists || [];
+      const total = response.data.count || artists.length;
+
+      const results = artists.map((artist: any) => {
+        const lifeSpan = artist['life-span'] || {};
+        const beginYear = lifeSpan.begin ? parseInt(lifeSpan.begin.substring(0, 4), 10) : null;
+        const endYear = lifeSpan.end ? parseInt(lifeSpan.end.substring(0, 4), 10) : null;
+
+        return {
+          mbid:           artist.id,
+          name:           artist.name,
+          country:        artist.country || null,
+          type:           artist.type || null,
+          beginYear:      isNaN(beginYear!) ? null : beginYear,
+          endYear:        isNaN(endYear!) ? null : endYear,
+          disambiguation: artist.disambiguation || null,
+        };
+      });
+
+      return { results, total };
+    } catch(error) {
+      if (axios.isAxiosError(error)) {
+        logger.error(`Failed to search artists for "${ query }": ${ error.message }`);
+      } else {
+        logger.error(`Failed to search artists for "${ query }": ${ String(error) }`);
+      }
+
+      return { results: [], total: 0 };
+    }
+  }
 }
 
 export default MusicBrainzClient;
