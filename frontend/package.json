@@ -3,7 +3,6 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "packageManager": "pnpm@10.27.0",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
@@ -12,19 +11,19 @@
   "dependencies": {
     "axios": "^1.13.2",
     "pinia": "^3.0.4",
-    "vue": "^3.5.24",
+    "vue": "^3.5.26",
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^25.0.6",
-    "@vitejs/plugin-vue": "^6.0.1",
+    "@vitejs/plugin-vue": "^6.0.3",
     "@vue/tsconfig": "^0.8.1",
     "autoprefixer": "^10.4.23",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
     "typescript": "~5.9.3",
-    "vite": "^7.2.4",
-    "vue-tsc": "^3.1.4"
+    "vite": "^7.3.1",
+    "vue-tsc": "^3.2.2"
   }
 }
