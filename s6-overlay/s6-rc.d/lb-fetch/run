@@ -1,0 +1,4 @@
+#!/command/execlineb -P
+fdmove -c 2 1
+cd /app
+exec python3 -m discovery.loops.lb_fetch_loop

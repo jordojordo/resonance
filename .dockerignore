@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache
+.mypy_cache
+.ruff_cache
+*.egg-info
+.eggs
+venv
+.venv
+env
+
+# Node
+frontend/node_modules
+frontend/.vite
+frontend/dist
+
+# Local development
+*.local
+.env
+.env.*
+
+# Testing
+.coverage
+htmlcov
+.tox
+
+# Build artifacts
+*.tar
+*.tar.gz
+*.zip
+
+# Examples and test data
+examples/
+backend/discovery/data/
+backend/discovery/config.yaml
+backend/discovery/docker-compose.yaml
+backend/discovery/Dockerfile
+backend/discovery/entrypoint.sh
+backend/discovery/setup.sh
+backend/discovery/README.md
+backend/discovery/docs/

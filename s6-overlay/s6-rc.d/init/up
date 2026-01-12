@@ -1,0 +1,32 @@
+#!/command/execlineb -P
+
+# Log startup
+foreground { echo "Resonance: Starting initialization..." }
+
+# Create data directory
+foreground { mkdir -p /data }
+
+# Validate config exists and is valid YAML
+foreground {
+  python3 -c "
+import os
+import sys
+import yaml
+
+config_path = '/config/config.yaml'
+
+# Check if file exists
+if not os.path.exists(config_path):
+    print(f'ERROR: {config_path} not found')
+    sys.exit(1)
+
+# Validate YAML
+try:
+    with open(config_path) as f:
+        yaml.safe_load(f)
+    print('Resonance: Config validated successfully')
+except Exception as e:
+    print(f'ERROR: Invalid YAML in config: {e}')
+    sys.exit(1)
+"
+}

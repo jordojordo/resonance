@@ -1,0 +1,13 @@
+# Web framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# Existing dependencies (from discovery scripts)
+requests>=2.31.0
+pyyaml>=6.0.1
+slskd-api>=0.1.5
+
+# Utilities
+python-multipart>=0.0.6
