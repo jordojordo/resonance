@@ -3,7 +3,7 @@ import type { QueueItem, QueueFilters } from '@/types'
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-import * as queueApi from '@/api/queue'
+import * as queueApi from '@/services/queue'
 import { useToast } from '@/composables/useToast'
 
 export const useQueueStore = defineStore('queue', () => {

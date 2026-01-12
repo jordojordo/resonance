@@ -1,6 +1,6 @@
 import { ref, onMounted } from 'vue'
-import * as queueApi from '@/api/queue'
-import type { QueueStats } from '@/api/queue'
+import * as queueApi from '@/services/queue'
+import type { QueueStats } from '@/services/queue'
 
 export function useStats() {
   const stats = ref<QueueStats>({
