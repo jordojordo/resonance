@@ -3,18 +3,19 @@ import Aura from '@primeuix/themes/aura';
 
 export const ResonancePreset = definePreset(Aura, {
   semantic: {
+    // New primary palette based on mockup blue (#2b2bee)
     primary: {
-      50:  '#eef2ff',
-      100: '#e0e7ff',
-      200: '#c7d2fe',
-      300: '#a5b4fc',
-      400: '#818cf8',
-      500: '#6366f1',
-      600: '#4f46e5',
-      700: '#4338ca',
-      800: '#3730a3',
-      900: '#312e81',
-      950: '#1e1b4b',
+      50:  '#eeeeff',
+      100: '#d8d8ff',
+      200: '#b5b5ff',
+      300: '#8b8bff',
+      400: '#6060ff',
+      500: '#2b2bee', // Main primary from mockup
+      600: '#2424d0',
+      700: '#1e1eb0',
+      800: '#181890',
+      900: '#121270',
+      950: '#0a0a50',
     },
     purple: {
       50:  '#faf5ff',
@@ -81,6 +82,32 @@ export const ResonancePreset = definePreset(Aura, {
       900: '#7c2d12',
       950: '#431407',
     },
+    teal: {
+      50:  '#f0fdfa',
+      100: '#ccfbf1',
+      200: '#99f6e4',
+      300: '#5eead4',
+      400: '#2dd4bf',
+      500: '#14b8a6',
+      600: '#0d9488',
+      700: '#0f766e',
+      800: '#115e59',
+      900: '#134e4a',
+      950: '#042f2e',
+    },
+    yellow: {
+      50:  '#fefce8',
+      100: '#fef9c3',
+      200: '#fef08a',
+      300: '#fde047',
+      400: '#facc15',
+      500: '#eab308',
+      600: '#ca8a04',
+      700: '#a16207',
+      800: '#854d0e',
+      900: '#713f12',
+      950: '#422006',
+    },
     colorScheme: {
       light: {
         primary: {
@@ -123,19 +150,20 @@ export const ResonancePreset = definePreset(Aura, {
           color:           '{primary.400}',
           focusColor:      '{primary.300}',
         },
+        // Updated surface colors from mockup
         surface: {
           0:   '#ffffff',
-          50:  '#f9fafb',
-          100: '#f3f4f6',
-          200: '#e5e7eb',
-          300: '#d1d5db',
-          400: '#9ca3af',
-          500: '#6b7280',
-          600: '#4b5563',
-          700: '#374151',
-          800: '#1f2937',  // Main dark background
-          900: '#111827',
-          950: '#030712',
+          50:  '#f6f6f8',      // Light background (from mockup)
+          100: '#e5e5eb',
+          200: '#c5c5d0',
+          300: '#9d9db9',      // Text secondary (from mockup)
+          400: '#6b6b8a',
+          500: '#3b3b54',
+          600: '#282839',      // Border dark (from mockup)
+          700: '#1c1c27',      // Surface dark (from mockup)
+          800: '#111118',      // Main dark background (from mockup)
+          900: '#0d0d12',
+          950: '#080810',
         },
       },
     },
