@@ -25,7 +25,7 @@
    Base Styles
    ============================================ */
 body {
-  font-family: 'Space Grotesk', var(--font-family), sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   background: var(--surface-ground);
   color: var(--text-color);
   letter-spacing: -0.015em;
@@ -63,15 +63,6 @@ h1, h2, h3, h4, h5, h6,
 /* ============================================
    Typography
    ============================================ */
-/* Font family utilities */
-.font-display {
-  font-family: 'Space Grotesk', sans-serif;
-  letter-spacing: -0.025em;
-}
-.font-body {
-  font-family: 'Noto Sans', sans-serif;
-  letter-spacing: normal;
-}
 
 /* Text sizes */
 .text-xs { font-size: 0.75rem; line-height: 1rem; }

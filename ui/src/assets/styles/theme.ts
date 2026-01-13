@@ -13,11 +13,6 @@ export const ResonancePreset = definePreset(Aura, {
     },
   },
   semantic: {
-    // Typography
-    fontFamily: {
-      base: "'Space Grotesk', var(--font-family), sans-serif",
-      mono: "'JetBrains Mono', 'Courier New', monospace",
-    },
     // New primary palette based on mockup blue (#2b2bee)
     primary: {
       50:  '#eeeeff',
