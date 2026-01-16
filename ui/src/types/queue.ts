@@ -11,12 +11,14 @@ export interface QueueItem {
   source_track?: string;
   cover_url?:    string;
   year?:         number;
+  in_library?:   boolean;
 }
 
 export interface QueueFilters {
-  source: 'all' | 'listenbrainz' | 'catalog';
-  sort:   'added_at' | 'score' | 'artist' | 'year';
-  order:  'asc' | 'desc';
-  limit:  number;
-  offset: number;
+  source:           'all' | 'listenbrainz' | 'catalog';
+  sort:             'added_at' | 'score' | 'artist' | 'year';
+  order:            'asc' | 'desc';
+  limit:            number;
+  offset:           number;
+  hide_in_library?: boolean;
 }

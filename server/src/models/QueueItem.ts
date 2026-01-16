@@ -35,6 +35,7 @@ export interface QueueItemAttributes {
   sourceTrack?: string;        // For albums: the track that led to this recommendation
   coverUrl?:    string;         // Cover art URL
   year?:        number;         // Release year
+  inLibrary?:   boolean;        // Whether this item already exists in the user's library
   addedAt:      Date;
   processedAt?: Date;          // When approved/rejected
   createdAt?:   Date;
@@ -61,6 +62,7 @@ class QueueItem extends Model<QueueItemAttributes, QueueItemCreationAttributes> 
   declare sourceTrack?: string;
   declare coverUrl?:    string;
   declare year?:        number;
+  declare inLibrary?:   boolean;
   declare addedAt:      Date;
   declare processedAt?: Date;
   declare createdAt?:   Date;
@@ -132,6 +134,13 @@ QueueItem.init(
       type:      DataTypes.INTEGER,
       allowNull: true,
     },
+    inLibrary: {
+      type:         DataTypes.BOOLEAN,
+      allowNull:    true,
+      defaultValue: false,
+      columnName:   'in_library',
+      comment:      'Whether this item already exists in the user\'s library',
+    },
     addedAt: {
       type:         DataTypes.DATE,
       allowNull:    false,
@@ -152,6 +161,8 @@ QueueItem.init(
       { fields: ['status'] },
       { fields: ['source'] },
       { fields: ['added_at'] },
+      { fields: ['in_library'] },
+      { fields: ['status', 'in_library'] },
       // Note: mbid already has unique constraint at column level (line 92)
     ],
   },

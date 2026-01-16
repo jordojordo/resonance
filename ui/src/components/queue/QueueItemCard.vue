@@ -67,6 +67,8 @@ const similarTag = computed(() => {
   return null;
 });
 
+const isInLibrary = computed(() => props.item.in_library === true);
+
 const getDefaultCover = () => {
   return 'data:image/svg+xml,' + encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
@@ -125,6 +127,10 @@ const handlePreview = () => {
       </div>
 
       <div class="queue-card__tags">
+        <span v-if="isInLibrary" class="queue-card__tag queue-card__tag--library">
+          <i class="pi pi-check-circle"></i>
+          In Library
+        </span>
         <span class="queue-card__tag" :class="sourceTag.class">
           <i :class="['pi', sourceTag.icon]"></i>
           {{ sourceTag.label }}
@@ -337,6 +343,12 @@ const handlePreview = () => {
   background: rgba(45, 212, 191, 0.2);
   border-color: rgba(45, 212, 191, 0.2);
   color: var(--teal-400);
+}
+
+.queue-card__tag--library {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.2);
+  color: var(--green-400);
 }
 
 /* Actions */

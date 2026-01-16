@@ -39,6 +39,7 @@ class QueueController extends BaseController {
       source_track: item.sourceTrack,
       cover_url:    item.coverUrl,
       year:         item.year,
+      in_library:   item.inLibrary,
     };
   }
 
@@ -56,7 +57,7 @@ class QueueController extends BaseController {
       }
 
       const {
-        source, sort, order, limit, offset
+        source, sort, order, limit, offset, hide_in_library
       } = parseResult.data;
 
       // Get items from queue service
@@ -66,6 +67,7 @@ class QueueController extends BaseController {
         order,
         limit,
         offset,
+        hideInLibrary: hide_in_library,
       });
 
       // Convert Sequelize models to plain objects
@@ -149,6 +151,20 @@ class QueueController extends BaseController {
       return res.json(response);
     } catch(error) {
       return this.handleError(res, error as Error, 'Failed to reject items');
+    }
+  };
+
+  /**
+   * Get queue statistics
+   * GET /api/v1/queue/stats
+   */
+  getStats = async(_req: Request, res: Response): Promise<Response> => {
+    try {
+      const stats = await this.queueService.getStats();
+
+      return res.json(stats);
+    } catch(error) {
+      return this.handleError(res, error as Error, 'Failed to fetch queue stats');
     }
   };
 }

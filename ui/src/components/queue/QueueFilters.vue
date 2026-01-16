@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Select from 'primevue/select';
 import Button from 'primevue/button';
+import ToggleSwitch from 'primevue/toggleswitch';
 import type { QueueFilters } from '@/types';
 import { SORT_OPTIONS } from '@/constants/queue';
 
@@ -75,7 +76,7 @@ function setViewMode(mode: ViewMode) {
         </Button>
       </div>
 
-      <!-- Right: Sort direction and view toggle -->
+      <!-- Right: Sort direction, hide owned, and view toggle -->
       <div class="queue-filters__right">
         <span class="queue-filters__label">Sort by</span>
         <Button
@@ -86,6 +87,17 @@ function setViewMode(mode: ViewMode) {
           {{ sortOptions.find(o => o.value === modelValue.sort)?.label }}
           <i :class="['pi ml-2', modelValue.order === 'desc' ? 'pi-arrow-down' : 'pi-arrow-up']"></i>
         </Button>
+
+        <div class="queue-filters__divider"></div>
+
+        <!-- Hide owned toggle -->
+        <label class="queue-filters__toggle">
+          <ToggleSwitch
+            :model-value="modelValue.hide_in_library ?? false"
+            @update:model-value="updateFilter('hide_in_library', $event)"
+          />
+          <span class="queue-filters__toggle-label">Hide Owned</span>
+        </label>
 
         <div class="queue-filters__divider"></div>
 
@@ -211,6 +223,25 @@ function setViewMode(mode: ViewMode) {
 
 :deep(.queue-filters__view-btn--active) {
   background: var(--surface-600);
+  color: white;
+}
+
+/* Hide owned toggle */
+.queue-filters__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.queue-filters__toggle-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--surface-300);
+  white-space: nowrap;
+}
+
+.queue-filters__toggle:hover .queue-filters__toggle-label {
   color: white;
 }
 </style>

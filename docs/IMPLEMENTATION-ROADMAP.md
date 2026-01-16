@@ -118,19 +118,19 @@ The project has been migrated from Python/FastAPI to Node.js/TypeScript/Express:
 **Goal:** Monitor download pipeline
 
 ### Server Tasks
-- [ ] **slskd integration endpoints**
-  - [ ] `GET /api/v1/downloads/active`
-  - [ ] `GET /api/v1/downloads/completed`
-  - [ ] `GET /api/v1/downloads/failed`
-  - [ ] `POST /api/v1/downloads/retry`
-  - [ ] `GET /api/v1/wishlist`
+- [x] **slskd integration endpoints**
+  - [x] `GET /api/v1/downloads/active`
+  - [x] `GET /api/v1/downloads/completed`
+  - [x] `GET /api/v1/downloads/failed`
+  - [x] `POST /api/v1/downloads/retry`
+  - [x] `GET /api/v1/wishlist`
 
 ### UI Tasks
-- [ ] **Downloads view**
-  - [ ] Active downloads with progress
-  - [ ] Completed downloads
-  - [ ] Failed downloads with retry
-  - [ ] Wishlist view
+- [x] **Downloads view**
+  - [x] Active downloads with progress
+  - [x] Completed downloads
+  - [x] Failed downloads with retry
+  - [x] Wishlist view
 
 ---
 

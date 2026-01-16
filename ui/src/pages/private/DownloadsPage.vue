@@ -21,6 +21,10 @@ import FailedDownloadsList from '@/components/downloads/FailedDownloadsList.vue'
         when running, with sockets it should be seamless.
 */
 
+/*
+  TODO: Add "Queued" downloads tab, will require a new API endpoint.
+*/
+
 const {
   activeDownloads,
   completedDownloads,

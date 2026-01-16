@@ -7,6 +7,13 @@ export interface NavidromeArtist {
   id:   string;
 }
 
+export interface NavidromeAlbum {
+  id:     string;
+  name:   string;
+  artist: string;
+  year?:  number;
+}
+
 /**
  * NavidromeClient provides access to Navidrome via Subsonic API.
  * https://www.subsonic.org/pages/api.jsp
@@ -97,6 +104,93 @@ export class NavidromeClient {
       }
 
       return {};
+    }
+  }
+
+  /**
+   * Get all albums from Navidrome library using paginated requests.
+   * Uses Subsonic API getAlbumList2 with alphabeticalByName type.
+   */
+  async getAlbums(): Promise<NavidromeAlbum[]> {
+    const salt = 'librarySync';
+    const token = this.md5Hash(this.password + salt);
+
+    const baseParams = {
+      u: this.username,
+      t: token,
+      s: salt,
+      v: '1.16.1',
+      c: 'resonance',
+      f: 'json',
+    };
+
+    const albums: NavidromeAlbum[] = [];
+    const pageSize = 500;
+    let offset = 0;
+    let hasMore = true;
+
+    try {
+      logger.info(`Fetching albums from Navidrome at ${ this.host }...`);
+
+      while (hasMore) {
+        const url = `${ this.host }/rest/getAlbumList2`;
+        const params = {
+          ...baseParams,
+          type:   'alphabeticalByName',
+          size:   pageSize,
+          offset: offset,
+        };
+
+        const response = await axios.get(url, {
+          params,
+          timeout: 60000, // Longer timeout for large libraries
+        });
+
+        const data = response.data;
+        const subsonicResp = data['subsonic-response'] || {};
+
+        if (subsonicResp.status !== 'ok') {
+          const error = subsonicResp.error || {};
+
+          logger.error(`Subsonic API error: ${ error.message || 'Unknown error' }`);
+
+          break;
+        }
+
+        const albumList = subsonicResp.albumList2?.album || [];
+
+        if (albumList.length === 0) {
+          hasMore = false;
+        } else {
+          for (const album of albumList) {
+            albums.push({
+              id:     album.id || '',
+              name:   album.name || album.title || '',
+              artist: album.artist || '',
+              year:   album.year,
+            });
+          }
+
+          offset += albumList.length;
+
+          // If we got less than page size, we've reached the end
+          if (albumList.length < pageSize) {
+            hasMore = false;
+          }
+        }
+      }
+
+      logger.info(`Found ${ albums.length } albums in library`);
+
+      return albums;
+    } catch(error) {
+      if (axios.isAxiosError(error)) {
+        logger.error(`Failed to fetch albums from Navidrome: ${ error.message }`);
+      } else {
+        logger.error(`Failed to fetch albums from Navidrome: ${ String(error) }`);
+      }
+
+      return [];
     }
   }
 }

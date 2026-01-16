@@ -10,6 +10,9 @@ interface CombinedStats extends QueueStats {
 export function useStats() {
   const stats = ref<CombinedStats>({
     pending:         0,
+    approved:        0,
+    rejected:        0,
+    inLibrary:       0,
     approvedToday:   0,
     totalProcessed:  0,
     activeDownloads: 0,

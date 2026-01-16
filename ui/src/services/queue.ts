@@ -12,12 +12,15 @@ export interface RejectRequest {
 
 export interface QueueStats {
   pending:        number;
+  approved:       number;
+  rejected:       number;
+  inLibrary:      number;
   approvedToday:  number;
   totalProcessed: number;
 }
 
 export async function getPending(filters: QueueFilters): Promise<PaginatedResponse<QueueItem>> {
-  const params: Record<string, string | number> = {
+  const params: Record<string, string | number | boolean> = {
     sort:   filters.sort,
     order:  filters.order,
     limit:  filters.limit,
@@ -26,6 +29,10 @@ export async function getPending(filters: QueueFilters): Promise<PaginatedRespon
 
   if (filters.source !== 'all') {
     params.source = filters.source;
+  }
+
+  if (filters.hide_in_library) {
+    params.hide_in_library = true;
   }
 
   const response = await client.get<PaginatedResponse<QueueItem>>('/queue/pending', { params });
@@ -42,18 +49,19 @@ export async function reject(request: RejectRequest): Promise<void> {
 }
 
 export async function getStats(): Promise<QueueStats> {
-  // Use getPending to calculate stats
-  const pendingResponse = await getPending({
-    source: 'all',
-    sort:   'added_at',
-    order:  'desc',
-    limit:  1,
-    offset: 0,
-  });
+  const response = await client.get<{
+    pending:   number;
+    approved:  number;
+    rejected:  number;
+    inLibrary: number;
+  }>('/queue/stats');
 
   return {
-    pending:        pendingResponse.total,
-    approvedToday:  0, // This would need a separate API endpoint
-    totalProcessed: 0, // This would need a separate API endpoint
+    pending:        response.data.pending,
+    approved:       response.data.approved,
+    rejected:       response.data.rejected,
+    inLibrary:      response.data.inLibrary,
+    approvedToday:  0, // TODO: Implement if needed
+    totalProcessed: response.data.approved + response.data.rejected,
   };
 }

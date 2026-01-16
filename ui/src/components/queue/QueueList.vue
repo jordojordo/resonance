@@ -128,10 +128,18 @@ function getDefaultCover() {
 
       <Column field="source" header="Source" style="width: 150px">
         <template #body="{ data }">
-          <Tag
-            :value="data.source === 'listenbrainz' ? 'ListenBrainz' : 'Catalog'"
-            :severity="getSourceSeverity(data.source)"
-          />
+          <div class="flex flex-column gap-1">
+            <Tag
+              :value="data.source === 'listenbrainz' ? 'ListenBrainz' : 'Catalog'"
+              :severity="getSourceSeverity(data.source)"
+            />
+            <Tag
+              v-if="data.in_library"
+              value="In Library"
+              severity="success"
+              class="w-fit"
+            />
+          </div>
         </template>
       </Column>
 

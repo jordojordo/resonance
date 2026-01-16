@@ -41,11 +41,12 @@ export type RejectRequest = z.infer<typeof rejectRequestSchema>;
  * Query params for getting pending items
  */
 export const getPendingQuerySchema = z.object({
-  source: z.enum(['all', 'listenbrainz', 'catalog']).default('all'),
-  sort:   z.enum(['added_at', 'score', 'artist', 'year']).default('added_at'),
-  order:  z.enum(['asc', 'desc']).default('desc'),
-  limit:  z.coerce.number().int().positive().default(50),
-  offset: z.coerce.number().int().nonnegative().default(0),
+  source:          z.enum(['all', 'listenbrainz', 'catalog']).default('all'),
+  sort:            z.enum(['added_at', 'score', 'artist', 'year']).default('added_at'),
+  order:           z.enum(['asc', 'desc']).default('desc'),
+  limit:           z.coerce.number().int().positive().default(50),
+  offset:          z.coerce.number().int().nonnegative().default(0),
+  hide_in_library: z.coerce.boolean().default(false),
 });
 
 export type GetPendingQuery = z.infer<typeof getPendingQuerySchema>;

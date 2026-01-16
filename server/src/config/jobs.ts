@@ -50,6 +50,10 @@ export const JOB_INTERVALS = {
     seconds: parseInt(process.env.SLSKD_INTERVAL || '3600', 10), // 1 hour
     cron:    secondsToCron(parseInt(process.env.SLSKD_INTERVAL || '3600', 10)),
   },
+  librarySync: {
+    seconds: parseInt(process.env.LIBRARY_SYNC_INTERVAL || '86400', 10), // 24 hours
+    cron:    secondsToCron(parseInt(process.env.LIBRARY_SYNC_INTERVAL || '86400', 10)),
+  },
 };
 
 /**

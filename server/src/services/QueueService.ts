@@ -1,6 +1,8 @@
 import { Op } from '@sequelize/core';
 import QueueItem, { QueueItemSource } from '@server/models/QueueItem';
 import WishlistService from './WishlistService';
+import LibraryService from './LibraryService';
+import { getConfig } from '@server/config/settings';
 import logger from '@server/config/logger';
 
 /**
@@ -9,20 +11,23 @@ import logger from '@server/config/logger';
  */
 export class QueueService {
   private wishlistService: WishlistService;
+  private libraryService:  LibraryService;
 
   constructor() {
     this.wishlistService = new WishlistService();
+    this.libraryService = new LibraryService();
   }
 
   /**
    * Get paginated pending items with filtering and sorting
    */
   async getPending(params: {
-    source?: QueueItemSource | 'all';
-    sort?:   'added_at' | 'score' | 'artist' | 'year';
-    order?:  'asc' | 'desc';
-    limit?:  number;
-    offset?: number;
+    source?:        QueueItemSource | 'all';
+    sort?:          'added_at' | 'score' | 'artist' | 'year';
+    order?:         'asc' | 'desc';
+    limit?:         number;
+    offset?:        number;
+    hideInLibrary?: boolean;
   }): Promise<{ items: QueueItem[]; total: number }> {
     const {
       source = 'all',
@@ -30,6 +35,7 @@ export class QueueService {
       order = 'desc',
       limit = 50,
       offset = 0,
+      hideInLibrary = false,
     } = params;
 
     // Build where clause
@@ -37,6 +43,11 @@ export class QueueService {
 
     if (source !== 'all') {
       where.source = source;
+    }
+
+    // Filter out items already in library if requested
+    if (hideInLibrary) {
+      where.inLibrary = { [Op.ne]: true };
     }
 
     // Map sort field to column name
@@ -150,20 +161,23 @@ export class QueueService {
    * Get queue statistics
    */
   async getStats(): Promise<{
-    pending:  number;
-    approved: number;
-    rejected: number;
+    pending:   number;
+    approved:  number;
+    rejected:  number;
+    inLibrary: number;
   }> {
-    const [pending, approved, rejected] = await Promise.all([
+    const [pending, approved, rejected, inLibrary] = await Promise.all([
       QueueItem.count({ where: { status: 'pending' } }),
       QueueItem.count({ where: { status: 'approved' } }),
       QueueItem.count({ where: { status: 'rejected' } }),
+      QueueItem.count({ where: { status: 'pending', inLibrary: true } }),
     ]);
 
     return {
       pending,
       approved,
       rejected,
+      inLibrary,
     };
   }
 
@@ -182,14 +196,42 @@ export class QueueService {
     sourceTrack?: string;
     coverUrl?:    string;
     year?:        number;
+    inLibrary?:   boolean;
   }): Promise<QueueItem> {
+    const config = getConfig();
+    const libraryDuplicateEnabled = config.library_duplicate?.enabled ?? false;
+    const autoReject = config.library_duplicate?.auto_reject ?? false;
+
+    // Check library if not already provided and feature is enabled
+    let inLibrary = item.inLibrary;
+
+    if (inLibrary === undefined && libraryDuplicateEnabled && item.album) {
+      inLibrary = await this.libraryService.isInLibrary(item.artist, item.album);
+    }
+
+    // Auto-reject if configured and item is in library
+    if (autoReject && inLibrary) {
+      const queueItem = await QueueItem.create({
+        ...item,
+        inLibrary,
+        status:      'rejected',
+        addedAt:     new Date(),
+        processedAt: new Date(),
+      });
+
+      logger.info(`Auto-rejected duplicate: ${ item.artist } - ${ item.album || item.title }`);
+
+      return queueItem;
+    }
+
     const queueItem = await QueueItem.create({
       ...item,
-      status:  'pending',
-      addedAt: new Date(),
+      inLibrary: inLibrary ?? false,
+      status:    'pending',
+      addedAt:   new Date(),
     });
 
-    logger.info(`Added to pending queue: ${ item.artist } - ${ item.album || item.title }`);
+    logger.info(`Added to pending queue: ${ item.artist } - ${ item.album || item.title }${ inLibrary ? ' (in library)' : '' }`);
 
     return queueItem;
   }

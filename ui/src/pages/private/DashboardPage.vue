@@ -59,9 +59,6 @@ const recentActivity = computed<ActivityItem[]>(() => [
   },
 ]);
 
-// TODO: Trend bars data (mock)
-const artistTrendBars = [40, 60, 30, 80, 50, 90, 75];
-
 const handleViewAllActivity = () => {
   // TODO: Navigate to activity log page when implemented
   console.log('View all activity clicked');
@@ -124,15 +121,13 @@ const handleViewAllActivity = () => {
           :downloads="activeDownloads"
         />
 
-        <!-- Artists Discovered (Trend) -->
-        <!-- TODO: Implement artist discovered trend API -->
-        <!--       What does this even mean? Artists suggested? New artists actually downloaded? -->
-         <DashboardStatsCard
-          title="Artists Discovered"
-          :value="stats.totalProcessed || 0"
+        <!-- In Library (Duplicates) -->
+        <DashboardStatsCard
+          title="In Library"
+          :value="stats.inLibrary || 0"
+          subtitle="Pending items you already own"
           color="green"
-          icon="pi-users"
-          :trend-bars="artistTrendBars"
+          icon="pi-check-circle"
         />
 
         <!-- Library Storage (Capacity) -->

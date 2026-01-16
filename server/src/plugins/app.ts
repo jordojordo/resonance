@@ -11,6 +11,7 @@ import jobsRoutes from '@server/routes/api/v1/jobs';
 import searchRoutes from '@server/routes/api/v1/search';
 import wishlistRoutes from '@server/routes/api/v1/wishlist';
 import downloadsRoutes from '@server/routes/api/v1/downloads';
+import libraryRoutes from '@server/routes/api/v1/library';
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use('/api/v1/jobs', jobsRoutes);
 app.use('/api/v1/search', searchRoutes);
 app.use('/api/v1/wishlist', wishlistRoutes);
 app.use('/api/v1/downloads', downloadsRoutes);
+app.use('/api/v1/library', libraryRoutes);
 
 // Serve static files in production
 const staticPath = path.join(process.cwd(), 'static');

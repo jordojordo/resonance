@@ -6,6 +6,7 @@ import { JOB_INTERVALS, RUN_ON_STARTUP } from '@server/config/jobs';
 import { listenbrainzFetchJob } from '@server/jobs/listenbrainzFetch';
 import { catalogDiscoveryJob } from '@server/jobs/catalogDiscovery';
 import { slskdDownloaderJob } from '@server/jobs/slskdDownloader';
+import { librarySyncJob } from '@server/jobs/librarySync';
 
 /**
  * Job definitions with name, cron schedule, and handler
@@ -41,6 +42,14 @@ const jobs: JobDefinition[] = [
     name:    JOB_NAMES.SLSKD,
     cron:    JOB_INTERVALS.slskd.cron,
     handler: slskdDownloaderJob,
+    running: false,
+    lastRun: null,
+    aborted: false,
+  },
+  {
+    name:    JOB_NAMES.LIBRARY_SYNC,
+    cron:    JOB_INTERVALS.librarySync.cron,
+    handler: librarySyncJob,
     running: false,
     lastRun: null,
     aborted: false,

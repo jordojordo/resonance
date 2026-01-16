@@ -42,3 +42,9 @@ export type {
   DownloadTaskStatus,
   DownloadTaskType,
 } from './DownloadTask';
+
+export { default as LibraryAlbum } from './LibraryAlbum';
+export type {
+  LibraryAlbumAttributes,
+  LibraryAlbumCreationAttributes,
+} from './LibraryAlbum';
