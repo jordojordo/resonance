@@ -20,7 +20,6 @@ export async function librarySyncJob(): Promise<void> {
     return;
   }
 
-  // Check if Navidrome is configured (needed for syncing)
   const navidrome = config.catalog_discovery?.navidrome;
 
   if (!navidrome?.host || !navidrome?.username || !navidrome?.password) {
@@ -34,24 +33,20 @@ export async function librarySyncJob(): Promise<void> {
   const libraryService = new LibraryService();
 
   try {
-    // Check for cancellation before starting
     if (isJobCancelled(JOB_NAMES.LIBRARY_SYNC)) {
       logger.info('Job cancelled before syncing library');
       throw new Error('Job cancelled');
     }
 
-    // Step 1: Sync albums from Navidrome
     const syncedCount = await libraryService.syncLibraryAlbums();
 
     logger.info(`Synced ${ syncedCount } albums from library`);
 
-    // Check for cancellation before re-checking items
     if (isJobCancelled(JOB_NAMES.LIBRARY_SYNC)) {
       logger.info('Job cancelled before re-checking pending items');
       throw new Error('Job cancelled');
     }
 
-    // Step 2: Re-check pending items against library
     const updatedCount = await libraryService.recheckPendingItems();
 
     logger.info(`Updated ${ updatedCount } queue items with library status`);

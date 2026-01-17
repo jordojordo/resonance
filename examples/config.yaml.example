@@ -96,6 +96,21 @@ catalog_discovery:
   mode: "manual"
 
 # -----------------------------------------------------------------------------
+# Library Duplicate Detection (Optional)
+# Avoid downloading albums you already own
+# Requires catalog_discovery.navidrome to be configured
+# -----------------------------------------------------------------------------
+library_duplicate:
+  # Enable library duplicate checking
+  enabled: true
+
+  # Auto-reject items that already exist in your library
+  # If false, items are just marked as "In Library" for manual review
+  auto_reject: false
+
+# Note: Sync interval is controlled via LIBRARY_SYNC_INTERVAL env var (default: 86400 = 24h)
+
+# -----------------------------------------------------------------------------
 # Web UI Settings
 # -----------------------------------------------------------------------------
 ui:

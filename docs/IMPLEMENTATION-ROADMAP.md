@@ -134,20 +134,20 @@ The project has been migrated from Python/FastAPI to Node.js/TypeScript/Express:
 
 ---
 
-## Phase 5: Library Duplicate Detection
+## Phase 5: Library Duplicate Detection ✅ COMPLETED
 
 **Goal:** Avoid downloading what you already own
 
 ### Server Tasks
-- [ ] **Library checking**
-  - [ ] Check if album exists in Navidrome library
-  - [ ] Mark duplicates in queue
-  - [ ] Optional: auto-reject duplicates
+- [x] **Library checking**
+  - [x] Check if album exists in Navidrome library
+  - [x] Mark duplicates in queue
+  - [x] Optional: auto-reject duplicates
 
 ### UI Tasks
-- [ ] **UI indicators**
-  - [ ] "Already in library" badge on queue items
-  - [ ] Library stats on dashboard
+- [x] **UI indicators**
+  - [x] "Already in library" badge on queue items
+  - [x] Library stats on dashboard
 
 ---
 

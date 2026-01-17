@@ -216,6 +216,8 @@ POST /api/v1/queue/approve      # Approve items
 POST /api/v1/queue/reject       # Reject items
 POST /api/v1/actions/lb-fetch   # Trigger lb-fetch
 POST /api/v1/actions/catalog    # Trigger catalog discovery
+GET  /api/v1/library/stats      # Library sync statistics
+POST /api/v1/library/sync       # Trigger library sync
 GET  /api/v1/health             # Health check
 ```
 
@@ -246,6 +248,7 @@ See [docs/architecture.md](docs/architecture.md) for technical details.
 | `CATALOG_INTERVAL` | `604800` | Seconds between catalog discovery (7d) |
 | `SLSKD_INTERVAL` | `3600` | Seconds between download runs (1h) |
 | `RUN_JOBS_ON_STARTUP` | `true` | Run discovery jobs immediately on startup |
+| `LIBRARY_SYNC_INTERVAL` | `86400` | Seconds between library sync runs (24h) |
 
 ## Data Directory
 
@@ -285,24 +288,10 @@ docker build -t resonance .
 ### Running locally
 
 ```bash
-# Server
-cd server
-pnpm install
-pnpm run dev    # Starts on http://localhost:8080 with hot reload
+pnpm --filter server install
+pnpm --filter ui install
 
-# UI (separate terminal)
-cd ui
-pnpm install
-pnpm run dev    # Starts on http://localhost:5173, proxies to server
-```
-
-### Production build
-
-```bash
-cd server
-pnpm install
-pnpm run build
-pnpm start
+pnpm dev # Starts on http://localhost:5173, runs UI and server in parallel
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
@@ -314,8 +303,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
 - [x] Unified pending queue with manual approval
 - [x] Web UI with Vue 3 ui
 - [x] Node.js/TypeScript server migration
-- [ ] Download status dashboard
-- [ ] Library duplicate checking
+- [x] Download status dashboard
+- [x] Library duplicate checking
 - [ ] Real-time WebSocket updates
 - [ ] Mobile-responsive design
 - [ ] Notification webhooks (Discord, etc.)

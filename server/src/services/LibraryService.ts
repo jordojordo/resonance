@@ -192,9 +192,7 @@ export class LibraryService {
     const autoReject = config.library_duplicate?.auto_reject ?? false;
 
     // Get all pending items
-    const allPendingItems = await QueueItem.findAll({
-      where: { status: 'pending' },
-    });
+    const allPendingItems = await QueueItem.findAll({ where: { status: 'pending' } });
 
     // Filter to only items that have albums
     const pendingItems = allPendingItems.filter((item) => item.album && item.album.trim() !== '');
