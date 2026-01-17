@@ -29,8 +29,11 @@ export async function listenbrainzFetchJob(): Promise<void> {
   const mode = config.mode || 'album';
   const fetchCount = config.fetch_count || 100;
   const approvalMode = lb.approval_mode || 'manual';
+  const minScorePercent = normalizeToPercent(config.min_score) ?? 0;
 
-  logger.info(`Fetching ListenBrainz recommendations for ${ lb.username } (mode: ${ mode }, approval: ${ approvalMode })`);
+  logger.info(
+    `Fetching ListenBrainz recommendations for ${ lb.username } (mode: ${ mode }, approval: ${ approvalMode }, min_score: ${ minScorePercent })`
+  );
 
   const lbClient = new ListenBrainzClient();
   const mbClient = new MusicBrainzClient();
@@ -66,6 +69,11 @@ export async function listenbrainzFetchJob(): Promise<void> {
 
     const mbid = rec.recording_mbid;
     const score = rec.score;
+    const scorePercent = normalizeToPercent(score);
+
+    if (scorePercent !== undefined && scorePercent < minScorePercent) {
+      continue;
+    }
 
     try {
       // Check if we've already processed this recording
@@ -100,7 +108,7 @@ export async function listenbrainzFetchJob(): Promise<void> {
             title:  trackInfo.title,
             mbid:   trackInfo.mbid,
             type:   'track',
-            score:  normalizeToPercent(score),
+            score:  scorePercent,
             source: 'listenbrainz',
           });
 
@@ -166,7 +174,7 @@ export async function listenbrainzFetchJob(): Promise<void> {
             album:       albumInfo.title,
             mbid:        albumMbid,
             type:        'album',
-            score:       normalizeToPercent(score),
+            score:       scorePercent,
             source:      'listenbrainz',
             sourceTrack: albumInfo.trackTitle,
             coverUrl:    coverUrl || undefined,

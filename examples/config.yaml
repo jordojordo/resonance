@@ -3,6 +3,9 @@
 # Copy this file to config.yaml and fill in your values
 # =============================================================================
 
+# Enable debug logging/features (optional)
+debug: false
+
 # -----------------------------------------------------------------------------
 # ListenBrainz Discovery
 # Recommendations based on your listening history (scrobbles)
@@ -24,8 +27,9 @@ listenbrainz:
 # track: Download individual tracks only
 mode: "album"
 
-# Minimum recommendation score (0-1)
-# 0 = accept all recommendations
+# Minimum recommendation score (0-100)
+# 0 = accept all recommendations, higher values = stricter filtering
+# (If you prefer, you can also use 0-1 and it will be treated as a fraction.)
 min_score: 0
 
 # Number of recommendations to fetch per run
@@ -49,13 +53,13 @@ slskd:
   #         role: readwrite
   api_key: "your_slskd_api_key"
 
-  # URL base path (usually "/")
+  # URL base path (useful if slskd is behind a reverse proxy path)
   url_base: "/"
 
-  # Search timeout in milliseconds
+  # Search timeout in milliseconds (passed to slskd)
   search_timeout: 15000
 
-  # Minimum tracks to consider a valid album result
+  # Minimum tracks to consider a valid album result (helps filter incomplete uploads)
   min_album_tracks: 3
 
 # -----------------------------------------------------------------------------
@@ -116,8 +120,8 @@ ui:
     # Enable authentication (recommended)
     enabled: true
 
-    # Auth type: "basic", "api_key", or "none"
-    # Use "none" if using external auth (Authelia, etc.)
+    # Auth type: "basic", "api_key", or "proxy"
+    # Use "proxy" if using external auth (Authelia, etc.)
     type: "basic"
 
     # For type: "basic" - HTTP Basic Authentication
@@ -126,7 +130,3 @@ ui:
 
     # For type: "api_key" - Bearer token authentication
     # api_key: "your_secret_api_key"
-
-  # UI customization (optional)
-  # title: "Resonance"
-  # theme: "dark"  # "light" or "dark"

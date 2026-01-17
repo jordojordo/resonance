@@ -69,6 +69,8 @@ cd resonance
 Create `config.yaml`:
 
 ```yaml
+# See examples/config.yaml for full configuration options
+
 # ListenBrainz recommendations (based on listening history)
 listenbrainz:
   username: "your_username"
@@ -96,11 +98,17 @@ catalog_discovery:
   min_similarity: 0.3
   mode: "manual"
 
+# Avoid downloading albums you already own (Optional)
+library_duplicate:
+  enabled: true
+  # Auto-reject items that already exist in your library
+  auto_reject: false
+
 # Web UI settings
 ui:
   auth:
     enabled: true
-    type: "basic"               # "basic", "api_key", or "none"
+    type: "basic"               # "basic", "api_key", or "proxy"
     username: "admin"
     password: "changeme"        # Change this!
 ```

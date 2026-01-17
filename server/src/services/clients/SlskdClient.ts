@@ -95,9 +95,14 @@ export interface SlskdEnqueueResult {
 export class SlskdClient {
   private client: AxiosInstance;
 
-  constructor(host: string, apiKey: string) {
+  constructor(host: string, apiKey: string, urlBase: string = '/') {
+    const trimmedHost = host.replace(/\/$/, '');
+    const trimmedBase = urlBase.trim();
+    const normalizedBase =
+      trimmedBase === '' || trimmedBase === '/'? '': `/${ trimmedBase.replace(/^\/+|\/+$/g, '') }`;
+
     this.client = axios.create({
-      baseURL: host.replace(/\/$/, ''),
+      baseURL: `${ trimmedHost }${ normalizedBase }`,
       headers: { 'X-API-Key': apiKey },
       timeout: 30000,
     });

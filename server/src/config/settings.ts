@@ -7,12 +7,45 @@ import { z } from 'zod';
  * Zod schemas for configuration validation
  */
 
+const AuthTypeSchema = z.preprocess((value) => {
+  // Back-compat: older docs used "none" for reverse-proxy auth.
+  if (typeof value === 'string' && value.toLowerCase() === 'none') {
+    return 'proxy';
+  }
+
+  return value;
+}, z.enum(['basic', 'api_key', 'proxy']));
+
 const AuthSettingsSchema = z.object({
   enabled:  z.boolean(),
-  type:     z.enum(['basic', 'api_key', 'proxy']).optional(),
+  type:     AuthTypeSchema.default('basic'),
   username: z.string().optional(),
   password: z.string().optional(),
   api_key:  z.string().optional(),
+}).superRefine((value, ctx) => {
+  if (!value.enabled) {
+    return;
+  }
+
+  if (value.type === 'basic') {
+    if (!value.username) {
+      ctx.addIssue({
+        code: 'custom', message: 'Required when ui.auth.type is basic', path: ['username'] 
+      });
+    }
+
+    if (!value.password) {
+      ctx.addIssue({
+        code: 'custom', message: 'Required when ui.auth.type is basic', path: ['password'] 
+      });
+    }
+  }
+
+  if (value.type === 'api_key' && !value.api_key) {
+    ctx.addIssue({
+      code: 'custom', message: 'Required when ui.auth.type is api_key', path: ['api_key'] 
+    });
+  }
 });
 
 const UISettingsSchema = z.object({ auth: AuthSettingsSchema });
@@ -20,12 +53,15 @@ const UISettingsSchema = z.object({ auth: AuthSettingsSchema });
 const ListenBrainzSettingsSchema = z.object({
   username:      z.string(),
   token:         z.string(),
-  approval_mode: z.enum(['auto', 'manual']),
+  approval_mode: z.enum(['auto', 'manual']).default('manual'),
 });
 
 const SlskdSettingsSchema = z.object({
-  host:    z.string(),
-  api_key: z.string(),
+  host:             z.string(),
+  api_key:          z.string(),
+  url_base:         z.string().default('/'),
+  search_timeout:   z.number().int().positive().default(15000),
+  min_album_tracks: z.number().int().positive().default(3),
 });
 
 const NavidromeSettingsSchema = z.object({
@@ -45,22 +81,56 @@ const CatalogDiscoverySettingsSchema = z.object({
   similar_artist_limit: z.number().int().positive().optional(),
   albums_per_artist:    z.number().int().positive().optional(),
   mode:                 z.enum(['auto', 'manual']),
+}).superRefine((value, ctx) => {
+  if (!value.enabled) {
+    return;
+  }
+
+  if (!value.navidrome) {
+    ctx.addIssue({
+      code: 'custom', message: 'Required when catalog_discovery.enabled is true', path: ['navidrome'] 
+    });
+  }
+
+  if (!value.lastfm) {
+    ctx.addIssue({
+      code: 'custom', message: 'Required when catalog_discovery.enabled is true', path: ['lastfm'] 
+    });
+  }
 });
 
 const LibraryDuplicateSettingsSchema = z.object({
   enabled:     z.boolean(),
-  auto_reject: z.boolean().optional(),
+  auto_reject: z.boolean().optional().default(false),
+}).superRefine((value) => {
+  if (!value.enabled) {
+    return;
+  }
+  // `catalog_discovery.navidrome` is required for library sync.
+  // Validate presence here so users get a clear startup error.
+  // (Field-level validation on navidrome happens in CatalogDiscoverySettingsSchema.)
+  //
+  // Note: We can't access sibling values in this schema; enforced in ConfigSchema below.
 });
 
 const ConfigSchema = z.object({
   debug:             z.boolean(),
   mode:              z.enum(['album', 'track']),
   fetch_count:       z.number().int().positive(),
+  min_score:         z.number().min(0).max(100),
   listenbrainz:      ListenBrainzSettingsSchema.optional(),
   slskd:             SlskdSettingsSchema.optional(),
   catalog_discovery: CatalogDiscoverySettingsSchema,
   library_duplicate: LibraryDuplicateSettingsSchema.optional(),
   ui:                UISettingsSchema,
+}).superRefine((value, ctx) => {
+  if (value.library_duplicate?.enabled && !value.catalog_discovery?.navidrome) {
+    ctx.addIssue({
+      code:    'custom',
+      message: 'catalog_discovery.navidrome is required when library_duplicate.enabled is true',
+      path:    ['catalog_discovery', 'navidrome'],
+    });
+  }
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -78,13 +148,14 @@ const DEFAULT_CONFIG: Config = {
   debug:             false,
   mode:              'album',
   fetch_count:       100,
+  min_score:         0,
   catalog_discovery: {
     enabled:             false,
     max_artists_per_run: 10,
     min_similarity:      0.3,
     mode:                'manual',
   },
-  ui: { auth: { enabled: false } },
+  ui: { auth: { enabled: false, type: 'basic' } },
 };
 
 /**

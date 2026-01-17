@@ -23,7 +23,7 @@ export class DownloadService {
 
     // slskd is optional - initialize client only if configured
     if (slskdConfig?.host && slskdConfig?.api_key) {
-      this.slskdClient = new SlskdClient(slskdConfig.host, slskdConfig.api_key);
+      this.slskdClient = new SlskdClient(slskdConfig.host, slskdConfig.api_key, slskdConfig.url_base);
     } else {
       this.slskdClient = null;
       logger.warn('slskd not configured - download progress will not be available');

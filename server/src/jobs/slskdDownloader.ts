@@ -47,9 +47,11 @@ export async function slskdDownloaderJob(): Promise<void> {
 
   logger.info('Starting slskd downloader job');
 
-  const slskdClient = new SlskdClient(slskdConfig.host, slskdConfig.api_key);
+  const slskdClient = new SlskdClient(slskdConfig.host, slskdConfig.api_key, slskdConfig.url_base);
   const downloadService = new DownloadService();
   const wishlistService = new WishlistService();
+  const searchTimeoutMs = slskdConfig.search_timeout ?? SEARCH_TIMEOUT_MS;
+  const minAlbumFiles = slskdConfig.min_album_tracks ?? MIN_FILES_ALBUM;
 
   try {
     if (isJobCancelled(JOB_NAMES.SLSKD)) {
@@ -113,6 +115,8 @@ export async function slskdDownloaderJob(): Promise<void> {
           wishlistKey,
           slskdClient,
           downloadService,
+          searchTimeoutMs,
+          minAlbumFiles,
         });
 
         if (processed === 'queued') {
@@ -205,18 +209,20 @@ async function processWishlistEntry(params: {
   wishlistKey:     string;
   slskdClient:     SlskdClient;
   downloadService: DownloadService;
+  searchTimeoutMs: number;
+  minAlbumFiles:   number;
 }): Promise<'queued' | 'failed' | 'skipped' | 'deferred'> {
   const {
-    entry, task, wishlistKey, slskdClient, downloadService
+    entry, task, wishlistKey, slskdClient, downloadService, searchTimeoutMs, minAlbumFiles
   } = params;
   const query = wishlistKey;
-  const minFiles = entry.type === 'track' ? MIN_FILES_TRACK : MIN_FILES_ALBUM;
+  const minFiles = entry.type === 'track' ? MIN_FILES_TRACK : minAlbumFiles;
 
   // Reuse existing search if task was deferred (timed out) or is still searching
   let searchId = (task.status === 'searching' || task.status === 'deferred') ? task.slskdSearchId || null : null;
 
   if (!searchId) {
-    searchId = await slskdClient.search(query, SEARCH_TIMEOUT_MS, minFiles);
+    searchId = await slskdClient.search(query, searchTimeoutMs, minFiles);
 
     if (!searchId) {
       await downloadService.updateTaskStatus(task.id, 'failed', { errorMessage: 'Failed to start slskd search' });

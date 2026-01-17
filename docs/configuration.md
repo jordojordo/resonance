@@ -9,6 +9,9 @@ Resonance is configured via a YAML file mounted at `/config/config.yaml`.
 # ListenBrainz Discovery
 # Recommendations based on your listening history (scrobbles)
 # =============================================================================
+# Enable debug logging/features (optional)
+debug: false
+
 listenbrainz:
   # Your ListenBrainz username
   username: "your_username"
@@ -99,7 +102,7 @@ ui:
     # Enable authentication (strongly recommended)
     enabled: true
 
-    # Auth type: "basic", "api_key", or "none"
+    # Auth type: "basic", "api_key", or "proxy"
     type: "basic"
 
     # For type: "basic"
@@ -109,9 +112,6 @@ ui:
     # For type: "api_key"
     # api_key: "your_secret_api_key"
 
-  # UI customization (optional)
-  # title: "Resonance"
-  # theme: "dark"  # "light" or "dark"
 ```
 
 ## Environment Variables
@@ -120,14 +120,22 @@ Environment variables can override or supplement the config file:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `HOST` | `0.0.0.0` | Bind address for the server |
+| `PORT` | `8080` | Port for the server |
 | `TZ` | `UTC` | Timezone (e.g., `America/New_York`) |
 | `LB_FETCH_INTERVAL` | `21600` | Seconds between lb-fetch runs (default: 6 hours) |
 | `CATALOG_INTERVAL` | `604800` | Seconds between catalog discovery (default: 7 days) |
 | `SLSKD_INTERVAL` | `3600` | Seconds between download runs (default: 1 hour) |
 | `LIBRARY_SYNC_INTERVAL` | `86400` | Seconds between library sync runs (default: 24 hours) |
-| `LOG_LEVEL` | `INFO` | Logging level: `DEBUG`, `INFO`, `WARNING`, `ERROR` |
+| `RUN_JOBS_ON_STARTUP` | `true` | Run jobs once on startup (`false` to disable) |
+| `LOG_LEVEL` | `debug` (dev), `info` (prod) | Logging level: `debug`, `info`, `warn`, `error` |
+| `LOG_DIR` | `DATA_PATH` | Directory for log files (when file logging is enabled) |
+| `LOG_TO_CONSOLE` | `true` (dev), `false` (prod) | Enable console logging |
+| `LOG_TO_FILE` | `false` (dev), `true` (prod) | Enable file logging |
 | `CONFIG_PATH` | `/config/config.yaml` | Path to config file |
 | `DATA_PATH` | `/data` | Path to data directory |
+| `RESONANCE_DB_FILE` | `DATA_PATH/resonance.sqlite` | SQLite DB file path |
+| `RESONANCE_DB_LOGGING` | `false` | Enable Sequelize SQL logging (`true`/`false`) |
 
 ### Override Config Values via Environment
 
@@ -154,12 +162,13 @@ Note: Use double underscore `__` for nested keys.
 |-----|------|----------|---------|-------------|
 | `username` | string | Yes | - | Your ListenBrainz username |
 | `token` | string | Yes | - | API token from LB settings |
-| `approval_mode` | string | No | `auto` | `auto` or `manual` |
+| `approval_mode` | string | No | `manual` | `auto` or `manual` |
 
 ### Mode Settings
 
 | Key | Type | Required | Default | Description |
 |-----|------|----------|---------|-------------|
+| `debug` | bool | No | `false` | Enable debug logging/features |
 | `mode` | string | No | `album` | `album` or `track` |
 | `min_score` | float | No | `0` | Minimum recommendation score (0-100) |
 | `fetch_count` | int | No | `100` | Recommendations per run |
@@ -205,7 +214,7 @@ Requires `catalog_discovery.navidrome` to be configured for library sync.
 | Key | Type | Required | Default | Description |
 |-----|------|----------|---------|-------------|
 | `enabled` | bool | No | `false` | Enable authentication |
-| `type` | string | No | `basic` | `basic`, `api_key`, `none` |
+| `type` | string | No | `basic` | `basic`, `api_key`, `proxy` |
 | `username` | string | Yes* | - | Username for basic auth |
 | `password` | string | Yes* | - | Password for basic auth |
 | `api_key` | string | Yes** | - | API key for api_key auth |
