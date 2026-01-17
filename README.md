@@ -313,7 +313,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
 - [x] Node.js/TypeScript server migration
 - [x] Download status dashboard
 - [x] Library duplicate checking
-- [ ] Real-time WebSocket updates
+- [x] Socket updates
 - [ ] Mobile-responsive design
 - [ ] Notification webhooks (Discord, etc.)
 
