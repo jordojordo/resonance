@@ -121,18 +121,24 @@ library_organize:
   enabled: false
 
   # Where slskd saves completed downloads (must be accessible to Resonance)
-  downloads_path: "/downloads/slskd/complete"
+  # This path must be mounted as a volume in your docker-compose.yaml
+  # Example: ./downloads/complete:/downloads/complete:rw
+  downloads_path: "/downloads/complete"
 
-  # Destination music library path
+  # Destination music library path (must be accessible to Resonance)
+  # This path must be mounted as a volume in your docker-compose.yaml
+  # Example: ./music:/music/library:rw
   library_path: "/music/library"
 
   # Organization mode: "flat" or "artist_album"
+  # flat: Places album folders directly in library_path
+  # artist_album: Creates Artist/Album folder structure
   organization: "artist_album"
 
-  # If true, run automatically on an interval (see LIBRARY_ORGANIZE_INTERVAL)
+  # If true, run automatically on an interval (see LIBRARY_ORGANIZE_INTERVAL env var)
   auto_organize: false
 
-  # Delete the source after a successful transfer
+  # Delete the source folder after a successful transfer
   delete_after_move: true
 
   # Trigger a Navidrome rescan after organizing (requires catalog_discovery.navidrome)

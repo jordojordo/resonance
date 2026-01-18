@@ -1,0 +1,123 @@
+# =============================================================================
+# Resonance + slskd Combined Docker Compose Example
+# Deploy both services together with shared volumes for library organization
+#
+# Use this when you want to run slskd and Resonance together.
+# See docker-compose.yaml for standalone Resonance deployment.
+# =============================================================================
+
+services:
+  resonance:
+    image: ghcr.io/jordonet/resonance:latest
+    container_name: resonance
+    environment:
+      - LOG_LEVEL=info
+      # Discovery intervals (optional, these are defaults)
+      # - LB_FETCH_INTERVAL=21600      # 6 hours
+      # - CATALOG_INTERVAL=604800      # 7 days
+      # - SLSKD_INTERVAL=3600          # 1 hour
+      # - LIBRARY_ORGANIZE_INTERVAL=0  # 0 = manual only
+    volumes:
+      # Configuration (required)
+      - ./config.yaml:/config/config.yaml:ro
+
+      # Data directory for state files (required)
+      - ./data:/data
+
+      # Library organization: slskd completed downloads (read/write to move files)
+      - ./downloads/complete:/downloads/complete:rw
+
+      # Library organization: music library destination
+      - ./music:/music/library:rw
+    ports:
+      - "8080:8080"
+    networks:
+      - resonance-net
+    depends_on:
+      - slskd
+    restart: unless-stopped
+
+  slskd:
+    image: slskd/slskd:latest
+    container_name: slskd
+    user: "1000:1000"  # Run as your user to avoid permission issues
+    environment:
+      # slskd can also be configured via environment variables:
+      # - SLSKD_SLSK_USERNAME=your_soulseek_username
+      # - SLSKD_SLSK_PASSWORD=your_soulseek_password
+    volumes:
+      # slskd configuration and data
+      - ./slskd/config:/app:rw
+
+      # Downloads directory (shared with Resonance for library organization)
+      - ./downloads:/downloads:rw
+
+      # Music to share on Soulseek (read-only)
+      - ./music:/music:ro
+    ports:
+      # Soulseek listen port (required for incoming connections)
+      - "50300:50300"
+      # Web UI port
+      - "5030:5030"
+    networks:
+      - resonance-net
+    restart: unless-stopped
+
+networks:
+  resonance-net:
+    driver: bridge
+
+# =============================================================================
+# Directory Structure
+# =============================================================================
+#
+# After setup, your directory should look like:
+#
+# ./
+# ├── config.yaml              # Resonance config
+# ├── docker-compose.yaml      # This file
+# ├── data/                    # Resonance state (SQLite DB, logs)
+# ├── downloads/
+# │   ├── complete/            # slskd completed downloads -> Resonance reads from here
+# │   └── incomplete/          # slskd in-progress downloads
+# ├── music/                   # Your music library (shared with slskd and Resonance)
+# └── slskd/
+#     └── config/
+#         └── slskd.yml        # slskd configuration
+#
+# =============================================================================
+# slskd Configuration (slskd/config/slskd.yml)
+# =============================================================================
+#
+# soulseek:
+#   username: your_soulseek_username
+#   password: your_soulseek_password
+#   listen_port: 50300
+#
+# directories:
+#   downloads: /downloads/complete
+#   incomplete: /downloads/incomplete
+#
+# shares:
+#   directories:
+#     - /music
+#
+# web:
+#   port: 5030
+#   authentication:
+#     api_keys:
+#       resonance:
+#         key: "generate-a-secure-api-key-here"
+#         role: readwrite
+#
+# =============================================================================
+# Resonance config.yaml library_organize section
+# =============================================================================
+#
+# library_organize:
+#   enabled: true
+#   downloads_path: "/downloads/complete"
+#   library_path: "/music/library"
+#   organization: "artist_album"
+#   delete_after_move: true
+#

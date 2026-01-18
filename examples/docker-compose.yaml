@@ -1,6 +1,9 @@
 # =============================================================================
 # Resonance Docker Compose Example
-# Basic deployment without external authentication
+# Standalone deployment (slskd running separately)
+#
+# Use this when you already have slskd running in another container/compose.
+# See docker-compose.combined.yaml for deploying both services together.
 # =============================================================================
 
 services:
@@ -8,32 +11,37 @@ services:
     image: ghcr.io/jordonet/resonance:latest
     container_name: resonance
     environment:
-      # Timezone
-      - TZ=America/New_York
-
       # Discovery intervals (optional, these are defaults)
       # - LB_FETCH_INTERVAL=21600      # 6 hours
       # - CATALOG_INTERVAL=604800      # 7 days
       # - SLSKD_INTERVAL=3600          # 1 hour
 
       # Log level
-      - LOG_LEVEL=INFO
+      - LOG_LEVEL=info
     volumes:
       # Configuration (required)
       - ./config.yaml:/config/config.yaml:ro
 
       # Data directory for state files (required)
       - ./data:/data
+
+      # Library organization (optional, required if library_organize.enabled: true)
+      # Mount the same downloads directory that slskd uses for completed downloads
+      # - /path/to/slskd/downloads/complete:/downloads/complete:rw
+      #
+      # Mount your music library destination
+      # - /path/to/music/library:/music/library:rw
     ports:
       # Web UI port
       - "8080:8080"
     restart: unless-stopped
 
-    # Optional: Add to existing networks
+    # IMPORTANT: If slskd is running in Docker, Resonance must be on the same
+    # network to reach it via hostname (e.g., http://slskd:5030)
     # networks:
-    #   - your-network
+    #   - slskd-network
 
-# Optional: Define external networks
+# If slskd is on an external Docker network, define it here
 # networks:
-#   your-network:
+#   slskd-network:
 #     external: true
