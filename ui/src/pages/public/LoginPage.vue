@@ -38,9 +38,13 @@ async function handleSubmit() {
       <!-- Logo -->
       <div class="text-center mb-6">
         <div
-          class="w-4rem h-4rem mx-auto bg-gradient border-round-2xl flex align-items-center justify-content-center mb-4"
+          class="logo-container w-4rem h-4rem mx-auto bg-gradient border-round-2xl flex align-items-center justify-content-center mb-4"
         >
-          <i class="pi pi-headphones text-white text-4xl"></i>
+          <img
+            src="@/assets/images/bars.png"
+            alt="Resonance logo"
+            class="logo"
+          >
         </div>
         <h1 class="text-2xl font-bold text-color">Resonance</h1>
         <p class="mt-2 text-muted">Sign in to manage your music queue</p>
@@ -95,3 +99,18 @@ async function handleSubmit() {
     </div>
   </div>
 </template>
+
+<style scoped>
+.logo-container {
+  background: linear-gradient(135deg, var(--primary-500, #2b2bee) 0%, #6366f1 100%);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(43, 43, 238, 0.3);
+}
+
+.logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+</style>
