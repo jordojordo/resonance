@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { exec as execCallback } from 'child_process';
+import { execFile as execFileCallback } from 'child_process';
 import { promisify } from 'util';
 import { Op } from '@sequelize/core';
 
@@ -8,8 +8,9 @@ import logger from '@server/config/logger';
 import { getConfig } from '@server/config/settings';
 import DownloadTask from '@server/models/DownloadTask';
 import NavidromeClient from '@server/services/clients/NavidromeClient';
+import { splitCommand } from '@server/utils/command';
 
-const exec = promisify(execCallback);
+const execFile = promisify(execFileCallback);
 
 export type OrganizePhase = 'finding_files' | 'running_beets' | 'transferring' | 'cleanup' | 'complete';
 
@@ -48,10 +49,6 @@ function sanitizePathSegment(value: string): string {
     .trim();
 
   return sanitized.length ? sanitized : 'Unknown';
-}
-
-function shellQuote(value: string): string {
-  return `'${ value.replace(/'/g, `'"'"'`) }'`;
 }
 
 async function pathExists(candidatePath: string): Promise<boolean> {
@@ -299,10 +296,18 @@ export class LibraryOrganizeService {
       callbacks?.onPhase?.(task, 'running_beets', settings.beets.command);
     }
 
-    const command = `${ settings.beets.command } ${ shellQuote(importPath) }`;
+    let file = settings.beets.command;
+    let args: string[] = [importPath];
 
     try {
-      const { stdout, stderr } = await exec(command, {
+      const commandParts = splitCommand(settings.beets.command);
+
+      if (commandParts.length > 0) {
+        file = commandParts[0];
+        args = [...commandParts.slice(1), importPath];
+      }
+
+      const { stdout, stderr } = await execFile(file, args, {
         timeout:   5 * 60 * 1000,
         maxBuffer: 10 * 1024 * 1024,
       });
@@ -317,7 +322,12 @@ export class LibraryOrganizeService {
     } catch(error) {
       const message = error instanceof Error ? error.message : String(error);
 
-      logger.warn('[library-organize] beets import failed', { error: message, importPath });
+      logger.warn('[library-organize] beets import failed', {
+        error: message,
+        importPath,
+        file,
+        args,
+      });
     }
   }
 

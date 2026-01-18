@@ -1,10 +1,12 @@
+import type DownloadTask from '@server/models/DownloadTask';
+import type { OrganizePhase, OrganizeResult } from '@server/services/LibraryOrganizeService';
+
 import logger from '@server/config/logger';
 import { JOB_NAMES } from '@server/constants/jobs';
 import { getConfig } from '@server/config/settings';
-import type DownloadTask from '@server/models/DownloadTask';
 import { isJobCancelled } from '@server/plugins/jobs';
 import { emitJobProgress } from '@server/plugins/io/namespaces/jobsNamespace';
-import { LibraryOrganizeService, type OrganizePhase, type OrganizeResult } from '@server/services/LibraryOrganizeService';
+import { LibraryOrganizeService } from '@server/services/LibraryOrganizeService';
 
 function formatTaskLabel(task: { artist: string; album: string }): string {
   return `${ task.artist } - ${ task.album }`;
