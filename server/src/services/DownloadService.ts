@@ -3,7 +3,9 @@ import type { SlskdTransferFile, SlskdUserTransfers } from './clients/SlskdClien
 
 import { Op } from '@sequelize/core';
 import logger from '@server/config/logger';
+import { JOB_INTERVALS } from '@server/config/jobs';
 import { getConfig } from '@server/config/settings';
+import { JOB_NAMES } from '@server/constants/jobs';
 import DownloadedItem from '@server/models/DownloadedItem';
 import DownloadTask, { DownloadTaskType, DownloadTaskStatus } from '@server/models/DownloadTask';
 import {
@@ -12,6 +14,7 @@ import {
   emitDownloadProgress,
   emitDownloadStatsUpdated,
 } from '@server/plugins/io/namespaces/downloadsNamespace';
+import { triggerJob } from '@server/plugins/jobs';
 
 import SlskdClient from './clients/SlskdClient';
 import WishlistService from './WishlistService';
@@ -688,6 +691,17 @@ export class DownloadService {
             downloadedAt: new Date(),
           },
         });
+
+        // Auto-trigger library organize if enabled and not manual-only
+        const config = getConfig();
+
+        if (config.library_organize?.enabled && JOB_INTERVALS.libraryOrganize.seconds > 0) {
+          const triggered = triggerJob(JOB_NAMES.LIBRARY_ORGANIZE);
+
+          if (triggered) {
+            logger.debug(`Triggered library organize after completing: ${ task.wishlistKey }`);
+          }
+        }
       }
     }
 

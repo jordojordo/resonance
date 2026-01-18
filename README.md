@@ -122,8 +122,6 @@ services:
   resonance:
     image: ghcr.io/jordonet/resonance:latest
     container_name: resonance
-    environment:
-      - TZ=America/New_York
     volumes:
       - ./config.yaml:/config/config.yaml:ro
       - ./data:/data
@@ -226,6 +224,8 @@ POST /api/v1/actions/lb-fetch   # Trigger lb-fetch
 POST /api/v1/actions/catalog    # Trigger catalog discovery
 GET  /api/v1/library/stats      # Library sync statistics
 POST /api/v1/library/sync       # Trigger library sync
+POST /api/v1/library/organize   # Trigger library organize
+GET  /api/v1/library/organize/status # Library organize status
 GET  /api/v1/health             # Health check
 ```
 
@@ -240,6 +240,8 @@ Resonance runs as a single Node.js process with background jobs scheduled via no
 | lb-fetch | Every 6 hours | ListenBrainz recommendations |
 | catalog-discovery | Weekly | Last.fm similar artists |
 | slskd-downloader | Every hour | Process wishlist via slskd |
+| library-sync | Daily | Sync Navidrome library albums |
+| library-organize | Manual (default) | Move completed downloads into library |
 
 The web interface is served by Express with a Vue 3 ui.
 
@@ -249,14 +251,17 @@ See [docs/architecture.md](docs/architecture.md) for technical details.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `TZ` | `UTC` | Timezone |
 | `PORT` | `8080` | HTTP server port |
-| `LOG_LEVEL` | `INFO` | Logging verbosity |
+| `LOG_LEVEL` | `info` | Logging verbosity |
+| `LOG_TO_CONSOLE` | `true` | Log to stdout/stderr |
+| `LOG_TO_FILE` | `false` | Log to files in `LOG_DIR` |
+| `LOG_DIR` | `DATA_PATH` | Directory for log files (when enabled) |
 | `LB_FETCH_INTERVAL` | `21600` | Seconds between lb-fetch runs (6h) |
 | `CATALOG_INTERVAL` | `604800` | Seconds between catalog discovery (7d) |
 | `SLSKD_INTERVAL` | `3600` | Seconds between download runs (1h) |
 | `RUN_JOBS_ON_STARTUP` | `true` | Run discovery jobs immediately on startup |
 | `LIBRARY_SYNC_INTERVAL` | `86400` | Seconds between library sync runs (24h) |
+| `LIBRARY_ORGANIZE_INTERVAL` | `0` | Seconds between library organize runs (0 = manual only) |
 
 ## Data Directory
 
@@ -265,9 +270,7 @@ All state is stored in `/data`:
 ```
 /data/
 ├── resonance.sqlite          # SQLite database (queue, processed items, etc.)
-├── wishlist.txt              # Albums to download (read by slskd-downloader)
-├── combined.log              # Application logs
-└── error.log                 # Error logs
+└── wishlist.txt              # Albums to download (read by slskd-downloader)
 ```
 
 ## Network Requirements

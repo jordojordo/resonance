@@ -113,6 +113,43 @@ library_duplicate:
   auto_reject: false
 
 # -----------------------------------------------------------------------------
+# Library Organization (Optional)
+# Move completed slskd downloads into your music library
+# -----------------------------------------------------------------------------
+library_organize:
+  # Enable library organization
+  enabled: false
+
+  # Where slskd saves completed downloads (must be accessible to Resonance)
+  # This path must be mounted as a volume in your docker-compose.yaml
+  # Example: ./downloads/complete:/downloads/complete:rw
+  downloads_path: "/downloads/complete"
+
+  # Destination music library path (must be accessible to Resonance)
+  # This path must be mounted as a volume in your docker-compose.yaml
+  # Example: ./music:/music/library:rw
+  library_path: "/music/library"
+
+  # Organization mode: "flat" or "artist_album"
+  # flat: Places album folders directly in library_path
+  # artist_album: Creates Artist/Album folder structure
+  organization: "artist_album"
+
+  # If true, run automatically on an interval (see LIBRARY_ORGANIZE_INTERVAL env var)
+  auto_organize: false
+
+  # Delete the source folder after a successful transfer
+  delete_after_move: true
+
+  # Trigger a Navidrome rescan after organizing (requires catalog_discovery.navidrome)
+  navidrome_rescan: false
+
+  # Optional beets integration for tagging/import
+  beets:
+    enabled: false
+    command: "beet import --quiet"
+
+# -----------------------------------------------------------------------------
 # Web UI Settings
 # -----------------------------------------------------------------------------
 ui:
