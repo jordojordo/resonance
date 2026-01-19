@@ -5,15 +5,13 @@ export function normalizeSlskdPath(value: string | null | undefined): string | n
     return null;
   }
 
-  const normalized = value.replace(/\\/g, '/').replace(/\/+$/, '');
+  const normalized = normalizeBasePath(value);
 
   return normalized === '.' ? '' : normalized;
 }
 
 function normalizeBasePath(value: string): string {
-  const normalized = value.replace(/\\/g, '/').replace(/\/+$/, '');
-
-  return normalized;
+  return value.replace(/\\/g, '/').replace(/\/+$/, '');
 }
 
 export function toSafeRelativePath(value: string | null | undefined): string | null {

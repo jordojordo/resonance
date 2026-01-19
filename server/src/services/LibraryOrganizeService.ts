@@ -9,7 +9,13 @@ import { getConfig } from '@server/config/settings';
 import DownloadTask from '@server/models/DownloadTask';
 import NavidromeClient from '@server/services/clients/NavidromeClient';
 import { splitCommand } from '@server/utils/command';
-import { joinDownloadsPath, slskdDirectoryToRelativeDownloadPath, slskdPathBasename, toSafeRelativePath } from '@server/utils/slskdPaths';
+import {
+  joinDownloadsPath,
+  normalizeBasePath,
+  slskdDirectoryToRelativeDownloadPath,
+  slskdPathBasename,
+  toSafeRelativePath
+} from '@server/utils/slskdPaths';
 
 const execFile = promisify(execFileCallback);
 
@@ -102,10 +108,6 @@ function sanitizeUsernameSegment(value: string | null | undefined): string | nul
   const sanitized = value.replace(/[/\\]/g, '-').trim();
 
   return sanitized.length ? sanitized : null;
-}
-
-function normalizeRelativePath(value: string): string {
-  return value.replace(/\\/g, '/').replace(/\/+$/, '');
 }
 
 function endsWithSegments(haystack: string[], needle: string[]): boolean {
@@ -363,10 +365,23 @@ export class LibraryOrganizeService {
 
     for (const candidate of candidates) {
       const normalizedCandidate = normalizeName(candidate.name);
-      const relPath = normalizeRelativePath(path.relative(downloadsRoot, candidate.absPath));
+      const relPath = normalizeBasePath(path.relative(downloadsRoot, candidate.absPath));
       const relSegmentsNormalized = relPath.split('/').map((segment) => normalizeName(segment)).filter(Boolean);
       let score = 0;
 
+      /*
+       * Score tiers (descending priority):
+       *   350 - Full slskd path match
+       *   300 - Last 2 segments of slskd path match (e.g., Artist/Album)
+       *   250 - Last 1 segment of slskd path match (e.g., Album)
+       *   220 - Exact "Artist - Album" folder name match
+       *   180 - Normalized name match (case/special char insensitive)
+       *   160 - Directory with both artist AND album in path segments
+       *   140 - Album name match OR slskd leaf segment match
+       *   110 - Directory with album name somewhere in path
+       *
+       * Bonuses: +0-10 for shallower depth, +5 for directories
+       */
       if (normalizedSlskdSegments && endsWithSegments(relSegmentsNormalized, normalizedSlskdSegments)) {
         score = 350;
       } else if (normalizedSlskdSegments && normalizedSlskdSegments.length >= 2 && endsWithSegments(relSegmentsNormalized, normalizedSlskdSegments.slice(-2))) {
@@ -414,7 +429,7 @@ export class LibraryOrganizeService {
       return null;
     }
 
-    const bestRel = toSafeRelativePath(normalizeRelativePath(path.relative(downloadsRoot, best.absPath)));
+    const bestRel = toSafeRelativePath(normalizeBasePath(path.relative(downloadsRoot, best.absPath)));
 
     if (bestRel && task.downloadPath !== bestRel) {
       await DownloadTask.update(
@@ -426,9 +441,6 @@ export class LibraryOrganizeService {
 
     const bestStat = await fs.promises.stat(best.absPath);
     const sourceDirName = bestStat.isFile() ? path.basename(path.dirname(best.absPath)) : path.basename(best.absPath);
-
-    logger.debug('[#####] downloadsRoot:', { downloadsRoot });
-    logger.debug('[#####] best:', { best });
 
     return {
       sourcePath: best.absPath,
