@@ -10,7 +10,7 @@ export function normalizeSlskdPath(value: string | null | undefined): string | n
   return normalized === '.' ? '' : normalized;
 }
 
-function normalizeBasePath(value: string): string {
+export function normalizeBasePath(value: string): string {
   return value.replace(/\\/g, '/').replace(/\/+$/, '');
 }
 
