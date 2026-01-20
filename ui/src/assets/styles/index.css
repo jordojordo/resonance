@@ -39,6 +39,7 @@
   --r-overlay-light: rgba(0, 0, 0, 0.03);
   --r-overlay-medium: rgba(0, 0, 0, 0.4);
   --r-overlay-heavy: rgba(0, 0, 0, 0.6);
+  --r-overlay-dark: rgba(0, 0, 0, 0.8);
 
   /* Glass effects */
   --r-glass-bg: rgba(255, 255, 255, 0.7);

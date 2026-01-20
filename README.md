@@ -43,7 +43,8 @@
 
 - **Multi-source discovery** - Combines ListenBrainz recommendations (based on what you listen to) with Last.fm similar artists (based on what you own)
 - **Unified approval queue** - Review all recommendations in one place before downloading
-- **Modern web UI** - Dashboard with cover art, metadata, and one-click approve/reject
+- **Preview player** - Listen to 30-second audio previews before approving (via Deezer/Spotify)
+- **Web UI** - Dashboard with cover art, metadata, and one-click approve/reject
 - **Automatic downloads** - Integrates with slskd (Soulseek) for P2P music downloads
 - **Library awareness** - Checks your existing library to avoid duplicates
 - **Flexible auth** - Built-in API auth or integrate with Authelia/OAuth
@@ -285,6 +286,8 @@ Resonance needs network access to:
 | ws.audioscrobbler.com | Last.fm similar artists |
 | musicbrainz.org | Album metadata |
 | coverartarchive.org | Album artwork |
+| api.deezer.com | Audio previews (default) |
+| api.spotify.com | Audio previews (optional fallback) |
 
 ## Development
 

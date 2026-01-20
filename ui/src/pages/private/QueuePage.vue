@@ -7,6 +7,7 @@ import { useQueue } from '@/composables/useQueue';
 import { useQueueSocket } from '@/composables/useQueueSocket';
 import { useToast } from '@/composables/useToast';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
+import { usePlayer } from '@/composables/usePlayer';
 
 import Button from 'primevue/button';
 import QueueFilters from '@/components/queue/QueueFilters.vue';
@@ -33,7 +34,8 @@ const {
 
 useQueueSocket();
 
-const { showInfo, showWarning } = useToast();
+const { showWarning } = useToast();
+const { playQueueItem } = usePlayer();
 
 const viewMode = ref<ViewMode>('grid');
 const selectedIndex = ref(0);
@@ -96,15 +98,7 @@ async function handleReject(mbids: string[]) {
 }
 
 function handlePreview(item: QueueItem) {
-  // TODO: Implement preview functionality
-  //       This will need to include a media player to preview songs/albums/artists
-  //       Should this fetch from listenbrainz? last.fm? tbd...
-  console.log('Preview item:', JSON.parse(JSON.stringify(item)));
-
-  showInfo(
-    'Preview coming soon',
-    `Artist: ${ item.artist }\n Title: ${ item.title ?? item.album }`
-  );
+  playQueueItem(item);
 }
 </script>
 
