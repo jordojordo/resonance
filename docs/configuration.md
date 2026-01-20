@@ -143,6 +143,21 @@ library_organize:
     command: "beet import --quiet"
 
 # =============================================================================
+# Preview Player (Optional)
+# Listen to 30-second track previews before approving/rejecting
+# =============================================================================
+preview:
+  # Enable preview player feature (defaults to true)
+  enabled: true
+
+  # Optional Spotify fallback (requires Spotify Developer credentials)
+  # Deezer is used by default and requires no API key
+  spotify:
+    enabled: false
+    client_id: "your_spotify_client_id"
+    client_secret: "your_spotify_client_secret"
+
+# =============================================================================
 # Web UI Settings
 # =============================================================================
 ui:
@@ -275,6 +290,21 @@ Requires `catalog_discovery.navidrome` to be configured for library sync.
 *Required if `enabled: true`
 
 If `navidrome_rescan: true`, `catalog_discovery.navidrome` must be configured.
+
+### Preview Player
+
+| Key | Type | Required | Default | Description |
+|-----|------|----------|---------|-------------|
+| `enabled` | bool | No | `true` | Enable preview player feature |
+| `spotify.enabled` | bool | No | `false` | Enable Spotify as fallback source |
+| `spotify.client_id` | string | Yes* | - | Spotify application client ID |
+| `spotify.client_secret` | string | Yes* | - | Spotify application client secret |
+
+*Required if `spotify.enabled: true`
+
+The preview player uses Deezer by default (no API key required). Spotify can be enabled as a fallback for tracks not found on Deezer. Get Spotify credentials from the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
+
+**Note:** Preview clips are limited to 30 seconds by the streaming services (Deezer/Spotify). This is an industry-standard limitation to protect copyrighted content.
 
 ### UI Authentication
 

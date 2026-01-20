@@ -55,12 +55,6 @@ const handleViewAllActivity = () => {
         <p class="text-white/50 text-lg">System overview and library status</p>
       </div>
       <div class="flex align-items-center gap-3">
-        <Button
-          label="Scan Library"
-          icon="pi pi-refresh"
-          class="dashboard__action-btn"
-          outlined
-        />
         <RouterLink :to="ROUTE_PATHS.QUEUE" class="no-underline">
           <Button
             label="Review Queue"

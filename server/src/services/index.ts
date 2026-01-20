@@ -27,3 +27,6 @@ export type {
   SlskdSearchResult,
   SlskdSearchState,
 } from './clients/SlskdClient';
+export { DeezerClient, default as DeezerClientDefault } from './clients/DeezerClient';
+export { SpotifyClient, default as SpotifyClientDefault } from './clients/SpotifyClient';
+export { PreviewService, default as PreviewServiceDefault } from './PreviewService';

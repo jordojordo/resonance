@@ -52,5 +52,6 @@ coverage.xml
 htmlcov/
 
 # Claude
+.analysis
 .claude/
 workspace/

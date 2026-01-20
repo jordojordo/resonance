@@ -11,6 +11,7 @@ import Toast from 'primevue/toast';
 
 import AppShell from '@/components/layout/AppShell.vue';
 import ThemeToggle from '@/components/common/ThemeToggle.vue';
+import PreviewPlayer from '@/components/player/PreviewPlayer.vue';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -70,6 +71,7 @@ function handleLogout(): void {
   </AppShell>
 
   <Toast />
+  <PreviewPlayer />
 </template>
 
 <style lang="scss" scoped>

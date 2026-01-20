@@ -318,26 +318,29 @@ const handlePreview = () => {
   height: 2.25rem;
   font-size: 0.875rem;
   font-weight: 700;
+  color: var(--r-text-muted);
   background: var(--primary-500);
-  border-color: var(--primary-500);
+  border-color: var(--r-border-default);
 }
 
 :deep(.queue-card__approve-btn:hover) {
-  background: var(--primary-600);
-  border-color: var(--primary-600);
+  border-color: var(--r-overlay-heavy);
+  background: var(--r-overlay-light);
+  color: var(--r-text-muted);
 }
 
 :deep(.queue-card__reject-btn) {
   width: 2.25rem;
   height: 2.25rem;
   padding: 0;
-  border-color: var(--r-border-default);
   color: var(--r-text-muted);
+  background: var(--primary-500);
+  border-color: var(--r-border-default);
 }
 
 :deep(.queue-card__reject-btn:hover) {
-  border-color: var(--red-400);
-  color: var(--red-400);
-  background: color-mix(in srgb, var(--red-400) 10%, transparent);
+  border-color: var(--r-overlay-heavy);
+  background: var(--r-overlay-light);
+  color: var(--r-text-muted);
 }
 </style>

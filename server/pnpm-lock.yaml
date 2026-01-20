@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      lru-cache:
+        specifier: ^11.2.4
+        version: 11.2.4
       socket.io:
         specifier: ^4.8.3
         version: 4.8.3
@@ -55,6 +58,10 @@ packages:
   engine.io@6.6.5:
     resolution: {integrity: sha512-2RZdgEbXmp5+dVbRm0P7HQUImZpICccJy7rN7Tv+SFa55pH+lxnuw6/K1ZxxBfHoYpSkHLAO92oa8O4SwFXA2A==}
     engines: {node: '>=10.2.0'}
+
+  lru-cache@11.2.4:
+    resolution: {integrity: sha512-B5Y16Jr9LB9dHVkh6ZevG+vAbOsNOYCX+sXvFWFu7B3Iz5mijW3zdbMyhsh8ANd2mSWBYdJgnqi+mL7/LrOPYg==}
+    engines: {node: 20 || >=22}
 
   mime-db@1.52.0:
     resolution: {integrity: sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==}
@@ -152,6 +159,8 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  lru-cache@11.2.4: {}
 
   mime-db@1.52.0: {}
 

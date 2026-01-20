@@ -163,6 +163,28 @@ const LibraryDuplicateSettingsSchema = z.object({
   // Note: We can't access sibling values in this schema; enforced in ConfigSchema below.
 });
 
+const SpotifySettingsSchema = z.object({
+  enabled:       z.boolean(),
+  client_id:     z.string().optional(),
+  client_secret: z.string().optional(),
+}).superRefine((value, ctx) => {
+  if (value.enabled && !value.client_id) {
+    ctx.addIssue({
+      code: 'custom', message: 'Required when preview.spotify.enabled is true', path: ['client_id'],
+    });
+  }
+  if (value.enabled && !value.client_secret) {
+    ctx.addIssue({
+      code: 'custom', message: 'Required when preview.spotify.enabled is true', path: ['client_secret'],
+    });
+  }
+});
+
+const PreviewSettingsSchema = z.object({
+  enabled: z.boolean().default(true),
+  spotify: SpotifySettingsSchema.optional(),
+});
+
 const ConfigSchema = z.object({
   debug:             z.boolean(),
   mode:              z.enum(['album', 'track']),
@@ -173,6 +195,7 @@ const ConfigSchema = z.object({
   catalog_discovery: CatalogDiscoverySettingsSchema,
   library_duplicate: LibraryDuplicateSettingsSchema.optional(),
   library_organize:  LibraryOrganizeSettingsSchema.optional(),
+  preview:           PreviewSettingsSchema.optional(),
   ui:                UISettingsSchema,
 }).superRefine((value, ctx) => {
   if (value.library_duplicate?.enabled && !value.catalog_discovery?.navidrome) {
@@ -200,6 +223,8 @@ export type SlskdSettings = z.infer<typeof SlskdSettingsSchema>;
 export type CatalogDiscoverySettings = z.infer<typeof CatalogDiscoverySettingsSchema>;
 export type LibraryDuplicateSettings = z.infer<typeof LibraryDuplicateSettingsSchema>;
 export type LibraryOrganizeSettings = z.infer<typeof LibraryOrganizeSettingsSchema>;
+export type PreviewSettings = z.infer<typeof PreviewSettingsSchema>;
+export type SpotifySettings = z.infer<typeof SpotifySettingsSchema>;
 
 /**
  * Default configuration values
