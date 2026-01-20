@@ -3,7 +3,8 @@ import logger from '@server/config/logger';
 import { getConfig } from '@server/config/settings';
 import { DeezerClient } from './clients/DeezerClient';
 import { SpotifyClient } from './clients/SpotifyClient';
-import type { PreviewResponse } from '@server/types/preview';
+import { AlbumTrackSelector } from './AlbumTrackSelector';
+import type { PreviewResponse, AlbumPreviewResponse, AlbumPreviewQuery } from '@server/types/preview';
 
 interface CachedPreview {
   url:    string | null;
@@ -15,9 +16,10 @@ interface CachedPreview {
  * Uses LRU cache to avoid repeated API calls.
  */
 export class PreviewService {
-  private cache:         LRUCache<string, CachedPreview>;
-  private deezerClient:  DeezerClient;
-  private spotifyClient: SpotifyClient | null = null;
+  private cache:              LRUCache<string, CachedPreview>;
+  private deezerClient:       DeezerClient;
+  private spotifyClient:      SpotifyClient | null = null;
+  private albumTrackSelector: AlbumTrackSelector;
 
   constructor() {
     // LRU cache: 1000 entries, 1-hour TTL
@@ -27,6 +29,7 @@ export class PreviewService {
     });
 
     this.deezerClient = new DeezerClient();
+    this.albumTrackSelector = new AlbumTrackSelector();
 
     // Initialize Spotify client if configured
     const config = getConfig();
@@ -103,6 +106,59 @@ export class PreviewService {
 
     return {
       url: null, source: null, available: false
+    };
+  }
+
+  /**
+   * Get preview URL for an album by selecting the best track
+   */
+  async getAlbumPreview(query: AlbumPreviewQuery): Promise<AlbumPreviewResponse> {
+    const config = getConfig();
+
+    if (config.preview?.enabled === false) {
+      return {
+        url:           null,
+        source:        null,
+        available:     false,
+        selectedTrack: null,
+      };
+    }
+
+    // 1. Use AlbumTrackSelector to get best track
+    const selectedTrack = await this.albumTrackSelector.selectTrack(query);
+
+    if (!selectedTrack) {
+      logger.debug(`No track found for album '${ query.artist } - ${ query.album }'`);
+
+      return {
+        url:           null,
+        source:        null,
+        available:     false,
+        selectedTrack: null,
+      };
+    }
+
+    // 2. If the selected track already has a preview URL, return it
+    if (selectedTrack.previewUrl) {
+      logger.debug(`Using existing preview URL for '${ selectedTrack.title }' from ${ selectedTrack.source }`);
+
+      return {
+        url:           selectedTrack.previewUrl,
+        source:        selectedTrack.source === 'musicbrainz' ? null : selectedTrack.source,
+        available:     true,
+        selectedTrack: selectedTrack.title,
+      };
+    }
+
+    // 3. Otherwise, search for preview URL using existing getPreview()
+    logger.debug(`Searching for preview URL for '${ selectedTrack.artist } - ${ selectedTrack.title }'`);
+    const preview = await this.getPreview(selectedTrack.artist, selectedTrack.title);
+
+    return {
+      url:           preview.url,
+      source:        preview.source,
+      available:     preview.available,
+      selectedTrack: selectedTrack.title,
     };
   }
 

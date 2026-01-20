@@ -48,7 +48,8 @@ export const usePlayerStore = defineStore('player', () => {
       });
 
       audio.addEventListener('error', () => {
-        if (isClosing) {
+        // Ignore errors when closing/clearing or when no track is loaded
+        if (isClosing || !currentTrack.value) {
           return;
         }
 
@@ -70,14 +71,14 @@ export const usePlayerStore = defineStore('player', () => {
    * Load a track for preview
    */
   async function loadTrack(track: PreviewTrack): Promise<boolean> {
-    // Stop any currently playing audio first
+    // Stop any currently playing audio first and keep isClosing true until we have a valid URL
+    isClosing = true;
+
     if (audio) {
       audio.pause();
-      isClosing = true;
       audio.src = '';
     }
 
-    isClosing = false;
     error.value = null;
     isLoading.value = true;
     isPlaying.value = false;
@@ -87,13 +88,50 @@ export const usePlayerStore = defineStore('player', () => {
     source.value = null;
 
     try {
+      // For album types, use the album preview endpoint
+      if (track.type === 'album' && track.album) {
+        const albumResponse = await previewApi.getAlbumPreview({
+          artist:      track.artist,
+          album:       track.album,
+          mbid:        track.mbid,
+          sourceTrack: track.sourceTrack,
+        });
+
+        if (!albumResponse.available || !albumResponse.url) {
+          // No preview available - show warning and close the player
+          currentTrack.value = null;
+          isLoading.value = false;
+          showWarning('Preview Unavailable', `No preview found for "${ track.album }" by ${ track.artist }`);
+
+          return false;
+        }
+
+        // Update the track title with the selected track name
+        if (albumResponse.selectedTrack) {
+          currentTrack.value = {
+            ...track,
+            title: albumResponse.selectedTrack,
+          };
+        }
+
+        const audioEl = getAudio();
+
+        // Now we have a valid URL, allow error events to be shown
+        isClosing = false;
+        audioEl.src = albumResponse.url;
+        source.value = albumResponse.source;
+
+        return true;
+      }
+
+      // For regular tracks, use the standard preview endpoint
       const response = await previewApi.getPreview({
         artist: track.artist,
         track:  track.title,
       });
 
       if (!response.available || !response.url) {
-        // No preview available - close the player
+        // No preview available - show warning and close the player
         currentTrack.value = null;
         isLoading.value = false;
         showWarning('Preview Unavailable', `No preview found for "${ track.title }" by ${ track.artist }`);
@@ -103,11 +141,14 @@ export const usePlayerStore = defineStore('player', () => {
 
       const audioEl = getAudio();
 
+      // Now we have a valid URL, allow error events to be shown
+      isClosing = false;
       audioEl.src = response.url;
       source.value = response.source;
 
       return true;
     } catch {
+      // Only show error for actual failures (network errors, server errors, etc.)
       currentTrack.value = null;
       isLoading.value = false;
       showError('Preview Error', 'Failed to fetch preview URL');

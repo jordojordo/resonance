@@ -1,17 +1,24 @@
 import type { QueueItem } from './queue';
 
 export interface PreviewTrack {
-  id:        string;
-  artist:    string;
-  title:     string;
-  album?:    string;
-  coverUrl?: string;
+  id:           string;
+  artist:       string;
+  title:        string;
+  album?:       string;
+  coverUrl?:    string;
+  type:         'album' | 'track';
+  mbid?:        string;
+  sourceTrack?: string;
 }
 
 export interface PreviewResponse {
   url:       string | null;
   source:    'deezer' | 'spotify' | null;
   available: boolean;
+}
+
+export interface AlbumPreviewResponse extends PreviewResponse {
+  selectedTrack: string | null;
 }
 
 export interface PlayerState {
@@ -31,10 +38,13 @@ export interface PlayerState {
  */
 export function queueItemToPreviewTrack(item: QueueItem): PreviewTrack {
   return {
-    id:       item.mbid,
-    artist:   item.artist,
-    title:    item.title || item.album || 'Unknown Track',
-    album:    item.album,
-    coverUrl: item.cover_url,
+    id:          item.mbid,
+    artist:      item.artist,
+    title:       item.title || item.album || 'Unknown Track',
+    album:       item.album,
+    coverUrl:    item.cover_url,
+    type:        item.type,
+    mbid:        item.mbid,
+    sourceTrack: item.source_track,
   };
 }

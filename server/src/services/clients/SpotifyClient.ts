@@ -1,6 +1,12 @@
 import axios from 'axios';
 import logger from '@server/config/logger';
-import type { SpotifyTokenResponse, SpotifySearchResponse } from '@server/types/preview';
+import type {
+  SpotifyTokenResponse,
+  SpotifySearchResponse,
+  SpotifyAlbumSearchResponse,
+  SpotifyAlbumTracksResponse,
+  SpotifyAlbumTrack,
+} from '@server/types/preview';
 
 const AUTH_URL = 'https://accounts.spotify.com/api/token';
 const API_URL = 'https://api.spotify.com/v1';
@@ -59,6 +65,100 @@ export class SpotifyClient {
 
       return null;
     }
+  }
+
+  /**
+   * Search for an album and return its Spotify ID
+   */
+  async searchAlbum(artist: string, album: string): Promise<string | null> {
+    try {
+      await this.ensureAccessToken();
+
+      const query = `artist:${ artist } album:${ album }`;
+      const response = await axios.get<SpotifyAlbumSearchResponse>(`${ API_URL }/search`, {
+        params: {
+          q:     query,
+          type:  'album',
+          limit: 5,
+        },
+        headers: { Authorization: `Bearer ${ this.accessToken }` },
+        timeout: 10000,
+      });
+
+      const albums = response.data.albums?.items || [];
+
+      if (albums.length > 0) {
+        return albums[0].id;
+      }
+
+      return null;
+    } catch(error) {
+      if (axios.isAxiosError(error)) {
+        logger.debug(`Spotify album search failed for '${ artist } - ${ album }': ${ error.message }`);
+      } else {
+        logger.debug(`Spotify album search failed for '${ artist } - ${ album }': ${ String(error) }`);
+      }
+
+      return null;
+    }
+  }
+
+  /**
+   * Get tracks for an album sorted by popularity (Spotify tracks have implicit popularity)
+   */
+  async getAlbumTracks(albumId: string): Promise<SpotifyAlbumTrack[]> {
+    try {
+      await this.ensureAccessToken();
+
+      const response = await axios.get<SpotifyAlbumTracksResponse>(`${ API_URL }/albums/${ albumId }/tracks`, {
+        params:  { limit: 50 },
+        headers: { Authorization: `Bearer ${ this.accessToken }` },
+        timeout: 10000,
+      });
+
+      return response.data.items || [];
+    } catch(error) {
+      if (axios.isAxiosError(error)) {
+        logger.debug(`Spotify get album tracks failed for '${ albumId }': ${ error.message }`);
+      } else {
+        logger.debug(`Spotify get album tracks failed for '${ albumId }': ${ String(error) }`);
+      }
+
+      return [];
+    }
+  }
+
+  /**
+   * Get the best track from an album for preview (first track with preview URL)
+   */
+  async getBestAlbumTrack(artist: string, album: string): Promise<{ title: string; previewUrl: string } | null> {
+    const albumId = await this.searchAlbum(artist, album);
+
+    if (!albumId) {
+      return null;
+    }
+
+    const tracks = await this.getAlbumTracks(albumId);
+
+    // Find first track with a preview URL
+    const trackWithPreview = tracks.find((t) => t.preview_url);
+
+    if (trackWithPreview?.preview_url) {
+      return {
+        title:      trackWithPreview.name,
+        previewUrl: trackWithPreview.preview_url,
+      };
+    }
+
+    // If no preview found, return first track name (without preview)
+    if (tracks.length > 0) {
+      return {
+        title:      tracks[0].name,
+        previewUrl: '',
+      };
+    }
+
+    return null;
   }
 
   /**

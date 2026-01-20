@@ -26,6 +26,11 @@ export interface ReleaseGroup {
   'first-release-date'?: string;
 }
 
+export interface ReleaseGroupTrack {
+  title:    string;
+  position: number;
+}
+
 /**
  * MusicBrainzClient provides access to MusicBrainz metadata API.
  * https://musicbrainz.org/doc/MusicBrainz_API
@@ -309,6 +314,70 @@ export class MusicBrainzClient {
       }
 
       return { results: [], total: 0 };
+    }
+  }
+
+  /**
+   * Get track listing for a release group (album) by MBID
+   */
+  async getReleaseGroupTracks(mbid: string): Promise<ReleaseGroupTrack[]> {
+    // First, get releases for this release-group
+    const releasesUrl = `${ BASE_URL }/release`;
+
+    try {
+      const releasesResponse = await axios.get(releasesUrl, {
+        headers: { 'User-Agent': USER_AGENT },
+        params:  {
+          'release-group': mbid,
+          limit:           1,
+          fmt:             'json',
+        },
+        timeout: 15000,
+      });
+
+      const releases = releasesResponse.data.releases || [];
+
+      if (!releases.length) {
+        logger.debug(`No releases found for release-group ${ mbid }`);
+
+        return [];
+      }
+
+      // Get the first release with media/tracks
+      const releaseId = releases[0].id;
+
+      // Now get the full release with recordings
+      const releaseUrl = `${ BASE_URL }/release/${ releaseId }`;
+      const releaseResponse = await axios.get(releaseUrl, {
+        headers: { 'User-Agent': USER_AGENT },
+        params:  {
+          inc: 'recordings',
+          fmt: 'json',
+        },
+        timeout: 15000,
+      });
+
+      const media = releaseResponse.data.media || [];
+      const tracks: ReleaseGroupTrack[] = [];
+
+      for (const medium of media) {
+        for (const track of medium.tracks || []) {
+          tracks.push({
+            title:    track.title || track.recording?.title || '',
+            position: track.position || tracks.length + 1,
+          });
+        }
+      }
+
+      return tracks;
+    } catch(error) {
+      if (axios.isAxiosError(error)) {
+        logger.error(`Failed to get release-group tracks for ${ mbid }: ${ error.message }`);
+      } else {
+        logger.error(`Failed to get release-group tracks for ${ mbid }: ${ String(error) }`);
+      }
+
+      return [];
     }
   }
 }
