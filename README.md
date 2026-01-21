@@ -5,6 +5,27 @@
 
 **Resonance** is a self-hosted music discovery pipeline that automatically finds and downloads music based on your listening habits and existing library. It combines multiple discovery sources into a unified approval workflow with a modern web UI.
 
+<p align="center">
+  <a href="examples/assets/resonance.webm">
+    <img src="examples/assets/resonance-preview.png" alt="Resonance Demo" width="800">
+  </a>
+  <br>
+  <em>Click to watch the demo video</em>
+</p>
+
+
+## Features
+
+- **Multi-source discovery** - Combines ListenBrainz recommendations (based on what you listen to) with Last.fm similar artists (based on what you own)
+- **Unified approval queue** - Review all recommendations in one place before downloading
+- **Preview player** - Listen to 30-second audio previews before approving (via Deezer/Spotify)
+- **Web UI** - Dashboard with cover art, metadata, and one-click approve/reject
+- **Automatic downloads** - Integrates with slskd (Soulseek) for P2P music downloads
+- **Library awareness** - Checks your existing library to avoid duplicates
+- **Flexible auth** - Built-in API auth or integrate with Authelia/OAuth
+- **Single container** - Everything runs in one Docker image
+
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                              RESONANCE                                      │
@@ -38,17 +59,6 @@
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
-
-## Features
-
-- **Multi-source discovery** - Combines ListenBrainz recommendations (based on what you listen to) with Last.fm similar artists (based on what you own)
-- **Unified approval queue** - Review all recommendations in one place before downloading
-- **Preview player** - Listen to 30-second audio previews before approving (via Deezer/Spotify)
-- **Web UI** - Dashboard with cover art, metadata, and one-click approve/reject
-- **Automatic downloads** - Integrates with slskd (Soulseek) for P2P music downloads
-- **Library awareness** - Checks your existing library to avoid duplicates
-- **Flexible auth** - Built-in API auth or integrate with Authelia/OAuth
-- **Single container** - Everything runs in one Docker image
 
 ## Quick Start
 
@@ -320,19 +330,6 @@ pnpm dev # Starts on http://localhost:5173, runs UI and server in parallel
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
-
-## Roadmap
-
-- [x] ListenBrainz recommendations (lb-fetch)
-- [x] Catalog-based discovery (Last.fm similar artists)
-- [x] Unified pending queue with manual approval
-- [x] Web UI with Vue 3 ui
-- [x] Node.js/TypeScript server migration
-- [x] Download status dashboard
-- [x] Library duplicate checking
-- [x] Socket updates
-- [ ] Mobile-responsive design
-- [ ] Notification webhooks (Discord, etc.)
 
 ## Related Projects
 
