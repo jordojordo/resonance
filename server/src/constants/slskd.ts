@@ -43,3 +43,9 @@ export const QUALITY_SCORES = {
   low:      50,
   unknown:  100,
 } as const;
+
+/** Default preferred audio formats for quality filtering */
+export const DEFAULT_PREFERRED_FORMATS = ['flac', 'wav', 'alac', 'mp3', 'm4a', 'ogg'] as const;
+
+/** Quality tier order from highest to lowest quality */
+export const QUALITY_TIER_ORDER = ['lossless', 'high', 'standard', 'low', 'unknown'] as const;

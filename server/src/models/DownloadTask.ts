@@ -1,4 +1,5 @@
 import type { PartialBy } from '@sequelize/utils';
+import type { QualityTier } from '@server/types/slskd';
 
 import { DataTypes, Model, sql } from '@sequelize/core';
 import { sequelize } from '@server/config/db/sequelize';
@@ -37,7 +38,7 @@ export interface DownloadTaskAttributes {
   qualityBitRate?:    number;           // Average bitrate in kbps
   qualityBitDepth?:   number;           // Bit depth (16, 24, etc.)
   qualitySampleRate?: number;           // Sample rate in Hz
-  qualityTier?:       string;           // Quality tier (lossless, high, standard, low)
+  qualityTier?:       QualityTier;      // Quality tier (lossless, high, standard, low)
   errorMessage?:      string;           // Error details for failed status
   retryCount:         number;           // Number of retry attempts
   queuedAt:           Date;             // When added to download queue
@@ -76,7 +77,7 @@ class DownloadTask extends Model<DownloadTaskAttributes, DownloadTaskCreationAtt
   declare qualityBitRate?:    number;
   declare qualityBitDepth?:   number;
   declare qualitySampleRate?: number;
-  declare qualityTier?:       string;
+  declare qualityTier?:       QualityTier;
   declare errorMessage?:      string;
   declare retryCount:         number;
   declare queuedAt:           Date;

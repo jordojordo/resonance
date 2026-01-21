@@ -30,6 +30,7 @@ import {
   MB_TO_BYTES,
   MUSIC_EXTENSIONS,
   QUALITY_SCORES,
+  DEFAULT_PREFERRED_FORMATS,
 } from '@server/constants/slskd';
 import {
   extractQualityInfo,
@@ -66,7 +67,7 @@ function buildSearchConfig(searchSettings?: SlskdSearchSettings, legacyTimeout?:
     retryDelayMs:         s?.retry?.delay_between_retries_ms ?? 5000,
     qualityPreferences:   qp ? {
       enabled:          qp.enabled ?? true,
-      preferredFormats: qp.preferred_formats ?? ['flac', 'wav', 'alac', 'mp3', 'm4a', 'ogg'],
+      preferredFormats: qp.preferred_formats ?? [...DEFAULT_PREFERRED_FORMATS],
       minBitrate:       qp.min_bitrate ?? 256,
       preferLossless:   qp.prefer_lossless ?? true,
       rejectLowQuality: qp.reject_low_quality ?? false,

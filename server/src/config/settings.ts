@@ -3,6 +3,8 @@ import path from 'path';
 import yaml from 'js-yaml';
 import { z } from 'zod';
 
+import { DEFAULT_PREFERRED_FORMATS } from '@server/constants/slskd';
+
 /**
  * Zod schemas for configuration validation
  */
@@ -66,7 +68,7 @@ const SlskdSearchRetrySchema = z.object({
 
 const SlskdQualityPreferencesSchema = z.object({
   enabled:            z.boolean().default(true),
-  preferred_formats:  z.array(z.string()).default(['flac', 'wav', 'alac', 'mp3', 'm4a', 'ogg']),
+  preferred_formats:  z.array(z.string()).default([...DEFAULT_PREFERRED_FORMATS]),
   min_bitrate:        z.number().int().min(0).max(9999)
     .default(256),
   prefer_lossless:    z.boolean().default(true),

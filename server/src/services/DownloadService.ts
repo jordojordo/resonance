@@ -1,4 +1,4 @@
-import type { ActiveDownload, DownloadProgress, DownloadStats, QualityTier } from '@server/types/downloads';
+import type { ActiveDownload, DownloadProgress, DownloadStats } from '@server/types/downloads';
 import type { SlskdTransferFile, SlskdUserTransfers } from '@server/types/slskd-client';
 
 import fs from 'fs';
@@ -120,7 +120,7 @@ export class DownloadService {
           bitRate:    task.qualityBitRate ?? null,
           bitDepth:   task.qualityBitDepth ?? null,
           sampleRate: task.qualitySampleRate ?? null,
-          tier:       (task.qualityTier as QualityTier) ?? 'unknown',
+          tier:       task.qualityTier ?? 'unknown',
         } : null,
         progress,
         queuedAt:       task.queuedAt,

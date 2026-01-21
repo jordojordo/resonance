@@ -13,6 +13,7 @@ import {
   STANDARD_QUALITY_BITRATE,
   LOW_QUALITY_BITRATE,
   QUALITY_SCORES,
+  QUALITY_TIER_ORDER,
 } from '@server/constants/slskd';
 
 /**
@@ -204,13 +205,12 @@ export function getDominantQualityInfo(files: SlskdFile[]): QualityInfo | null {
   }
 
   // Sort by count descending, then by tier quality
-  const tierOrder: QualityTier[] = ['lossless', 'high', 'standard', 'low', 'unknown'];
   const sorted = Array.from(grouped.values()).sort((a, b) => {
     if (b.count !== a.count) {
       return b.count - a.count;
     }
 
-    return tierOrder.indexOf(a.info.tier) - tierOrder.indexOf(b.info.tier);
+    return QUALITY_TIER_ORDER.indexOf(a.info.tier) - QUALITY_TIER_ORDER.indexOf(b.info.tier);
   });
 
   const dominant = sorted[0];
