@@ -2,6 +2,7 @@ import type {
   SearchConfig,
   SearchAttemptResult,
   FileSelectionOptions,
+  QualityPreferences,
 } from '@server/types/slskd';
 import type { SlskdFile, SlskdSearchResponse } from '@server/types/slskd-client';
 import type { QueryContext } from '@server/types/search-query';
@@ -28,13 +29,22 @@ import {
   MIN_FILES_TRACK,
   MB_TO_BYTES,
   MUSIC_EXTENSIONS,
+  QUALITY_SCORES,
+  DEFAULT_PREFERRED_FORMATS,
 } from '@server/constants/slskd';
+import {
+  extractQualityInfo,
+  calculateAverageQualityScore,
+  shouldRejectFile,
+  getDominantQualityInfo,
+} from '@server/utils/audioQuality';
 
 /**
  * Build SearchConfig from configuration settings.
  */
 function buildSearchConfig(searchSettings?: SlskdSearchSettings, legacyTimeout?: number, legacyMinTracks?: number): SearchConfig {
   const s = searchSettings;
+  const qp = s?.quality_preferences;
 
   return {
     queryBuilder: new SearchQueryBuilder({
@@ -55,6 +65,14 @@ function buildSearchConfig(searchSettings?: SlskdSearchSettings, legacyTimeout?:
     maxRetryAttempts:     s?.retry?.max_attempts ?? 3,
     simplifyOnRetry:      s?.retry?.simplify_on_retry ?? true,
     retryDelayMs:         s?.retry?.delay_between_retries_ms ?? 5000,
+    qualityPreferences:   qp ? {
+      enabled:          qp.enabled ?? true,
+      preferredFormats: qp.preferred_formats ?? [...DEFAULT_PREFERRED_FORMATS],
+      minBitrate:       qp.min_bitrate ?? 256,
+      preferLossless:   qp.prefer_lossless ?? true,
+      rejectLowQuality: qp.reject_low_quality ?? false,
+      rejectLossless:   qp.reject_lossless ?? false,
+    } : undefined,
   };
 }
 
@@ -294,18 +312,28 @@ async function processWishlistEntry(params: {
 
   const fileIds = enqueueResult.enqueued.map(f => f.id).filter((id): id is string => typeof id === 'string');
 
+  // Extract dominant quality info from selected files
+  const qualityInfo = getDominantQualityInfo(selection.files);
+
   await downloadService.updateTaskStatus(task.id, 'queued', {
-    slskdSearchId:  searchId,
-    slskdUsername:  response.username,
-    slskdDirectory: selection.directory,
-    slskdFileIds:   fileIds.length > 0 ? fileIds : undefined,
-    fileCount:      enqueueResult.enqueued.length,
-    errorMessage:   undefined,
+    slskdSearchId:     searchId,
+    slskdUsername:     response.username,
+    slskdDirectory:    selection.directory,
+    slskdFileIds:      fileIds.length > 0 ? fileIds : undefined,
+    fileCount:         enqueueResult.enqueued.length,
+    qualityFormat:     qualityInfo?.format,
+    qualityBitRate:    qualityInfo?.bitRate ?? undefined,
+    qualityBitDepth:   qualityInfo?.bitDepth ?? undefined,
+    qualitySampleRate: qualityInfo?.sampleRate ?? undefined,
+    qualityTier:       qualityInfo?.tier,
+    errorMessage:      undefined,
   });
 
   await slskdClient.deleteSearch(searchId);
 
-  logger.info(`Queued download: ${ wishlistKey } (${ response.username }, ${ enqueueResult.enqueued.length } files)`);
+  const qualityDesc = qualityInfo ? `${ qualityInfo.format }/${ qualityInfo.tier }` : 'unknown';
+
+  logger.info(`Queued download: ${ wishlistKey } (${ response.username }, ${ enqueueResult.enqueued.length } files, ${ qualityDesc })`);
 
   return 'queued';
 }
@@ -406,7 +434,7 @@ async function attemptSearch(params: {
     query, wishlistKey, task, slskdClient, downloadService, searchConfig, minFiles
   } = params;
   const {
-    searchTimeoutMs, maxWaitMs, maxResponsesToEval, minFileSizeBytes, maxFileSizeBytes, preferCompleteAlbums, preferAlbumFolder
+    searchTimeoutMs, maxWaitMs, maxResponsesToEval, minFileSizeBytes, maxFileSizeBytes, preferCompleteAlbums, preferAlbumFolder, qualityPreferences
   } = searchConfig;
 
   // Reuse existing search if task was deferred (timed out) or is still searching
@@ -462,7 +490,7 @@ async function attemptSearch(params: {
     return { status: 'failed' };
   }
 
-  const response = pickBestResponse(responses, maxResponsesToEval, minFileSizeBytes, maxFileSizeBytes);
+  const response = pickBestResponse(responses, maxResponsesToEval, minFileSizeBytes, maxFileSizeBytes, qualityPreferences);
 
   if (!response) {
     await slskdClient.deleteSearch(searchId);
@@ -513,6 +541,7 @@ function pickBestResponse(
   maxToEvaluate: number,
   minFileSizeBytes: number,
   maxFileSizeBytes: number,
+  qualityPreferences?: QualityPreferences,
 ): SlskdSearchResponse | null {
   // Limit responses to evaluate for performance
   const toEvaluate = responses.slice(0, maxToEvaluate);
@@ -520,7 +549,7 @@ function pickBestResponse(
   const scored = toEvaluate
     .map((response) => {
       // Count only music files within size constraints for scoring
-      const musicFiles = response.files.filter((f) => {
+      let musicFiles = response.files.filter((f) => {
         if (!isMusicFile(f.filename)) {
           return false;
         }
@@ -539,9 +568,23 @@ function pickBestResponse(
         return true;
       });
 
+      // Apply quality rejection filter if enabled
+      if (qualityPreferences?.enabled && qualityPreferences.rejectLowQuality) {
+        musicFiles = musicFiles.filter((f) => {
+          const qualityInfo = extractQualityInfo(f);
+
+          return !shouldRejectFile(qualityInfo, qualityPreferences);
+        });
+      }
+
+      // Calculate quality score
+      const qualityScore = qualityPreferences?.enabled ? calculateAverageQualityScore(musicFiles, qualityPreferences) : QUALITY_SCORES.unknown;
+
       return {
         response,
+        musicFiles,
         musicFileCount: musicFiles.length,
+        qualityScore,
         totalSize:      musicFiles.reduce((sum, file) => sum + (file.size || 0), 0),
         uploadSpeed:    response.uploadSpeed || 0,
         hasSlot:        response.hasFreeUploadSlot ? 1 : 0,
@@ -553,9 +596,14 @@ function pickBestResponse(
     return null;
   }
 
+  // Sort: hasSlot → qualityScore → musicFileCount → totalSize → uploadSpeed
   scored.sort((a, b) => {
     if (b.hasSlot !== a.hasSlot) {
       return b.hasSlot - a.hasSlot;
+    }
+
+    if (b.qualityScore !== a.qualityScore) {
+      return b.qualityScore - a.qualityScore;
     }
 
     if (b.musicFileCount !== a.musicFileCount) {

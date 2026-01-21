@@ -101,6 +101,21 @@ slskd:
       simplify_on_retry: true     # Simplify query (remove diacritics, special chars)
       delay_between_retries_ms: 5000
 
+    # Audio quality preferences (optional)
+    quality_preferences:
+      enabled: true               # Enable quality-based filtering and scoring
+      preferred_formats:          # Formats to prioritize (bonus scoring)
+        - flac
+        - wav
+        - alac
+        - mp3
+        - m4a
+        - ogg
+      min_bitrate: 256            # Minimum acceptable bitrate (kbps) for lossy formats
+      prefer_lossless: true       # Give lossless formats higher priority
+      reject_low_quality: false   # Hard reject files below min_bitrate (vs just deprioritize)
+      reject_lossless: false      # Hard reject lossless files (for users who only want lossy)
+
 # =============================================================================
 # Catalog Discovery
 # Find new artists similar to ones you already own via Last.fm
@@ -318,6 +333,29 @@ Optional retry configuration under `slskd.search.retry`:
 | `max_attempts` | int | `3` | Total attempts including primary |
 | `simplify_on_retry` | bool | `true` | Simplify query on retry (remove diacritics, special chars) |
 | `delay_between_retries_ms` | int | `5000` | Delay between retry attempts |
+
+### slskd Quality Preferences
+
+Optional quality preferences configuration under `slskd.search.quality_preferences`:
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `enabled` | bool | `true` | Enable quality-based filtering and scoring |
+| `preferred_formats` | string[] | `["flac", "wav", "alac", "mp3", "m4a", "ogg"]` | Formats to prioritize (bonus scoring) |
+| `min_bitrate` | int | `256` | Minimum acceptable bitrate (kbps) for lossy formats |
+| `prefer_lossless` | bool | `true` | Give lossless formats higher priority in scoring |
+| `reject_low_quality` | bool | `false` | Hard reject files below min_bitrate (vs just deprioritize) |
+| `reject_lossless` | bool | `false` | Hard reject lossless files (for users who only want lossy formats) |
+
+**Quality Tiers:**
+- **Lossless** - FLAC, WAV, ALAC, AIFF (highest priority by default)
+- **High** - 320+ kbps lossy (MP3, AAC, OGG, etc.)
+- **Standard** - 256-319 kbps lossy
+- **Low** - Below 256 kbps lossy
+
+When `reject_low_quality: true`, files in the "Low" tier are filtered out entirely. When `false`, they are just scored lower and deprioritized.
+
+When `reject_lossless: true`, lossless files (FLAC, WAV, ALAC, AIFF) are filtered out entirely. This is useful for users with limited storage who only want lossy formats.
 
 ### Catalog Discovery
 

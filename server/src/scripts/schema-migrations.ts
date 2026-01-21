@@ -60,6 +60,47 @@ const COLUMN_MIGRATIONS: ColumnMigration[] = [
       allowNull: true,
     },
   },
+  // Quality columns for audio quality preferences feature
+  {
+    table:      'download_tasks',
+    column:     'quality_format',
+    definition: {
+      type:      DataTypes.STRING(20),
+      allowNull: true,
+    },
+  },
+  {
+    table:      'download_tasks',
+    column:     'quality_bit_rate',
+    definition: {
+      type:      DataTypes.INTEGER,
+      allowNull: true,
+    },
+  },
+  {
+    table:      'download_tasks',
+    column:     'quality_bit_depth',
+    definition: {
+      type:      DataTypes.INTEGER,
+      allowNull: true,
+    },
+  },
+  {
+    table:      'download_tasks',
+    column:     'quality_sample_rate',
+    definition: {
+      type:      DataTypes.INTEGER,
+      allowNull: true,
+    },
+  },
+  {
+    table:      'download_tasks',
+    column:     'quality_tier',
+    definition: {
+      type:      DataTypes.STRING(20),
+      allowNull: true,
+    },
+  },
 ];
 
 /**

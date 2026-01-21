@@ -1,4 +1,5 @@
 import type { PartialBy } from '@sequelize/utils';
+import type { QualityTier } from '@server/types/slskd';
 
 import { DataTypes, Model, sql } from '@sequelize/core';
 import { sequelize } from '@server/config/db/sequelize';
@@ -18,28 +19,33 @@ export type DownloadTaskType = 'album' | 'track';
  * Tracks items from wishlist through slskd download to completion.
  */
 export interface DownloadTaskAttributes {
-  id:              string;           // UUID
-  wishlistKey:     string;           // Format: "artist - album" (unique) - @deprecated use wishlistItemId
-  wishlistItemId?: string;           // UUID FK to WishlistItem
-  artist:          string;
-  album:           string;
-  type:            DownloadTaskType;
-  status:          DownloadTaskStatus;
-  year?:           number;           // Release year for search queries
-  organizedAt?:    Date;             // When moved to library
-  downloadPath?:   string;           // Relative path under downloads root
-  slskdSearchId?:  string;           // Search ID from slskd
-  slskdUsername?:  string;           // Source user for downloads
-  slskdDirectory?: string;           // Directory path on source
-  slskdFileIds?:   string[];         // Transfer file IDs from slskd enqueue response
-  fileCount?:      number;           // Total files in download
-  errorMessage?:   string;           // Error details for failed status
-  retryCount:      number;           // Number of retry attempts
-  queuedAt:        Date;             // When added to download queue
-  startedAt?:      Date;             // When download actually started
-  completedAt?:    Date;             // When finished (success or fail)
-  createdAt?:      Date;
-  updatedAt?:      Date;
+  id:                 string;           // UUID
+  wishlistKey:        string;           // Format: "artist - album" (unique) - @deprecated use wishlistItemId
+  wishlistItemId?:    string;           // UUID FK to WishlistItem
+  artist:             string;
+  album:              string;
+  type:               DownloadTaskType;
+  status:             DownloadTaskStatus;
+  year?:              number;           // Release year for search queries
+  organizedAt?:       Date;             // When moved to library
+  downloadPath?:      string;           // Relative path under downloads root
+  slskdSearchId?:     string;           // Search ID from slskd
+  slskdUsername?:     string;           // Source user for downloads
+  slskdDirectory?:    string;           // Directory path on source
+  slskdFileIds?:      string[];         // Transfer file IDs from slskd enqueue response
+  fileCount?:         number;           // Total files in download
+  qualityFormat?:     string;           // Detected audio format (flac, mp3, etc.)
+  qualityBitRate?:    number;           // Average bitrate in kbps
+  qualityBitDepth?:   number;           // Bit depth (16, 24, etc.)
+  qualitySampleRate?: number;           // Sample rate in Hz
+  qualityTier?:       QualityTier;      // Quality tier (lossless, high, standard, low)
+  errorMessage?:      string;           // Error details for failed status
+  retryCount:         number;           // Number of retry attempts
+  queuedAt:           Date;             // When added to download queue
+  startedAt?:         Date;             // When download actually started
+  completedAt?:       Date;             // When finished (success or fail)
+  createdAt?:         Date;
+  updatedAt?:         Date;
 }
 
 export type DownloadTaskCreationAttributes = PartialBy<
@@ -52,28 +58,33 @@ export type DownloadTaskCreationAttributes = PartialBy<
  * Represents items being downloaded via slskd with full lifecycle tracking.
  */
 class DownloadTask extends Model<DownloadTaskAttributes, DownloadTaskCreationAttributes> implements DownloadTaskAttributes {
-  declare id:              string;
-  declare wishlistKey:     string;
-  declare wishlistItemId?: string;
-  declare artist:          string;
-  declare album:           string;
-  declare type:            DownloadTaskType;
-  declare status:          DownloadTaskStatus;
-  declare year?:           number;
-  declare organizedAt?:    Date;
-  declare downloadPath?:   string;
-  declare slskdSearchId?:  string;
-  declare slskdUsername?:  string;
-  declare slskdDirectory?: string;
-  declare slskdFileIds?:   string[];
-  declare fileCount?:      number;
-  declare errorMessage?:   string;
-  declare retryCount:      number;
-  declare queuedAt:        Date;
-  declare startedAt?:      Date;
-  declare completedAt?:    Date;
-  declare createdAt?:      Date;
-  declare updatedAt?:      Date;
+  declare id:                 string;
+  declare wishlistKey:        string;
+  declare wishlistItemId?:    string;
+  declare artist:             string;
+  declare album:              string;
+  declare type:               DownloadTaskType;
+  declare status:             DownloadTaskStatus;
+  declare year?:              number;
+  declare organizedAt?:       Date;
+  declare downloadPath?:      string;
+  declare slskdSearchId?:     string;
+  declare slskdUsername?:     string;
+  declare slskdDirectory?:    string;
+  declare slskdFileIds?:      string[];
+  declare fileCount?:         number;
+  declare qualityFormat?:     string;
+  declare qualityBitRate?:    number;
+  declare qualityBitDepth?:   number;
+  declare qualitySampleRate?: number;
+  declare qualityTier?:       QualityTier;
+  declare errorMessage?:      string;
+  declare retryCount:         number;
+  declare queuedAt:           Date;
+  declare startedAt?:         Date;
+  declare completedAt?:       Date;
+  declare createdAt?:         Date;
+  declare updatedAt?:         Date;
 }
 
 DownloadTask.init(
@@ -160,6 +171,36 @@ DownloadTask.init(
       allowNull:  true,
       columnName: 'file_count',
       comment:    'Total number of files in the download',
+    },
+    qualityFormat: {
+      type:       DataTypes.STRING(20),
+      allowNull:  true,
+      columnName: 'quality_format',
+      comment:    'Detected audio format (flac, mp3, etc.)',
+    },
+    qualityBitRate: {
+      type:       DataTypes.INTEGER,
+      allowNull:  true,
+      columnName: 'quality_bit_rate',
+      comment:    'Average bitrate in kbps',
+    },
+    qualityBitDepth: {
+      type:       DataTypes.INTEGER,
+      allowNull:  true,
+      columnName: 'quality_bit_depth',
+      comment:    'Bit depth (16, 24, etc.)',
+    },
+    qualitySampleRate: {
+      type:       DataTypes.INTEGER,
+      allowNull:  true,
+      columnName: 'quality_sample_rate',
+      comment:    'Sample rate in Hz',
+    },
+    qualityTier: {
+      type:       DataTypes.STRING(20),
+      allowNull:  true,
+      columnName: 'quality_tier',
+      comment:    'Quality tier (lossless, high, standard, low, unknown)',
     },
     errorMessage: {
       type:       DataTypes.TEXT,

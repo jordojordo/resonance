@@ -1,6 +1,26 @@
 import { z } from 'zod';
 
 /**
+ * Quality tier enum
+ */
+export const qualityTierSchema = z.enum(['lossless', 'high', 'standard', 'low', 'unknown']);
+
+export type QualityTier = z.infer<typeof qualityTierSchema>;
+
+/**
+ * Quality info schema
+ */
+export const qualityInfoSchema = z.object({
+  format:     z.string(),
+  bitRate:    z.number().nullable(),
+  bitDepth:   z.number().nullable(),
+  sampleRate: z.number().nullable(),
+  tier:       qualityTierSchema,
+});
+
+export type QualityInfo = z.infer<typeof qualityInfoSchema>;
+
+/**
  * Download status enum
  */
 export const downloadStatusSchema = z.enum([
@@ -42,6 +62,7 @@ export const activeDownloadSchema = z.object({
   slskdUsername:   z.string().nullable(),
   slskdDirectory:  z.string().nullable(),
   fileCount:       z.number().int().positive().nullable(),
+  quality:         qualityInfoSchema.nullable(),
   progress:        downloadProgressSchema.nullable(),
   queuedAt:        z.coerce.date(),
   startedAt:       z.coerce.date().nullable(),

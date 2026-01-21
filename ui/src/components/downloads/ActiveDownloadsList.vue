@@ -10,6 +10,7 @@ import Tag from 'primevue/tag';
 import Button from 'primevue/button';
 
 import DownloadProgress from './DownloadProgress.vue';
+import QualityBadge from './QualityBadge.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 
 interface Props {
@@ -90,6 +91,13 @@ const handleDelete = () => {
       <Column field="status" header="Status" sortable>
         <template #body="{ data }">
           <Tag :value="data.status" :severity="getStatusSeverity(data.status)" />
+        </template>
+      </Column>
+
+      <Column header="Quality" style="min-width: 120px">
+        <template #body="{ data }">
+          <QualityBadge v-if="data.quality" :quality="data.quality" />
+          <span v-else class="text-surface-400 text-sm">-</span>
         </template>
       </Column>
 
