@@ -92,6 +92,10 @@ slskd:
   #   retry:
   #     enabled: true
   #     max_attempts: 3
+  #   quality_preferences:
+  #     enabled: true
+  #     prefer_lossless: true
+  #     min_bitrate: 256
 
 # Catalog discovery (based on library artists → Last.fm similar)
 catalog_discovery:

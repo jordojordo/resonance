@@ -1,5 +1,15 @@
 export type DownloadStatus = 'pending' | 'searching' | 'queued' | 'downloading' | 'deferred' | 'completed' | 'failed';
 
+export type QualityTier = 'lossless' | 'high' | 'standard' | 'low' | 'unknown';
+
+export interface QualityInfo {
+  format:     string;
+  bitRate:    number | null;
+  bitDepth:   number | null;
+  sampleRate: number | null;
+  tier:       QualityTier;
+}
+
 export interface DownloadProgress {
   filesCompleted:         number;
   filesTotal:             number;
@@ -19,6 +29,7 @@ export interface ActiveDownload {
   slskdUsername:  string | null;
   slskdDirectory: string | null;
   fileCount:      number | null;
+  quality:        QualityInfo | null;
   progress:       DownloadProgress | null;
   queuedAt:       string;
   startedAt:      string | null;

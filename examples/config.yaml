@@ -104,6 +104,22 @@ slskd:
       simplify_on_retry: true     # Simplify query (remove diacritics, special chars)
       delay_between_retries_ms: 5000
 
+    # Audio quality preferences (optional)
+    # Controls filtering and scoring of search results based on audio quality
+    quality_preferences:
+      enabled: true               # Enable quality-based filtering and scoring
+      preferred_formats:          # Formats to prioritize (bonus scoring)
+        - flac
+        - wav
+        - alac
+        - mp3
+        - m4a
+        - ogg
+      min_bitrate: 256            # Minimum acceptable bitrate (kbps) for lossy formats
+      prefer_lossless: true       # Give lossless formats higher priority
+      reject_low_quality: false   # Hard reject files below min_bitrate (vs just deprioritize)
+      reject_lossless: false      # Hard reject lossless files (for users who only want lossy)
+
 # -----------------------------------------------------------------------------
 # Catalog Discovery (Optional)
 # Find new artists similar to ones you already own via Last.fm

@@ -64,6 +64,16 @@ const SlskdSearchRetrySchema = z.object({
   delay_between_retries_ms: z.number().int().min(0).default(5000),
 });
 
+const SlskdQualityPreferencesSchema = z.object({
+  enabled:            z.boolean().default(true),
+  preferred_formats:  z.array(z.string()).default(['flac', 'wav', 'alac', 'mp3', 'm4a', 'ogg']),
+  min_bitrate:        z.number().int().min(0).max(9999)
+    .default(256),
+  prefer_lossless:    z.boolean().default(true),
+  reject_low_quality: z.boolean().default(false),
+  reject_lossless:    z.boolean().default(false),
+});
+
 const SlskdSearchSchema = z.object({
   // Query templates - variables: {artist}, {album}, {title}, {year}
   album_query_template:      z.string().default('{artist} - {album}'),
@@ -93,6 +103,8 @@ const SlskdSearchSchema = z.object({
     simplify_on_retry:        true,
     delay_between_retries_ms: 5000,
   }),
+
+  quality_preferences: SlskdQualityPreferencesSchema.optional(),
 });
 
 const SlskdSettingsSchema = z.object({
@@ -262,6 +274,7 @@ export type ListenBrainzSettings = z.infer<typeof ListenBrainzSettingsSchema>;
 export type SlskdSettings = z.infer<typeof SlskdSettingsSchema>;
 export type SlskdSearchSettings = z.infer<typeof SlskdSearchSchema>;
 export type SlskdSearchRetrySettings = z.infer<typeof SlskdSearchRetrySchema>;
+export type SlskdQualityPreferencesSettings = z.infer<typeof SlskdQualityPreferencesSchema>;
 export type CatalogDiscoverySettings = z.infer<typeof CatalogDiscoverySettingsSchema>;
 export type LibraryDuplicateSettings = z.infer<typeof LibraryDuplicateSettingsSchema>;
 export type LibraryOrganizeSettings = z.infer<typeof LibraryOrganizeSettingsSchema>;

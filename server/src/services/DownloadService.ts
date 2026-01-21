@@ -1,4 +1,4 @@
-import type { ActiveDownload, DownloadProgress, DownloadStats } from '@server/types/downloads';
+import type { ActiveDownload, DownloadProgress, DownloadStats, QualityTier } from '@server/types/downloads';
 import type { SlskdTransferFile, SlskdUserTransfers } from '@server/types/slskd-client';
 
 import fs from 'fs';
@@ -115,6 +115,13 @@ export class DownloadService {
         slskdUsername:  task.slskdUsername || null,
         slskdDirectory: task.slskdDirectory || null,
         fileCount:      task.fileCount || null,
+        quality:        task.qualityFormat ? {
+          format:     task.qualityFormat,
+          bitRate:    task.qualityBitRate ?? null,
+          bitDepth:   task.qualityBitDepth ?? null,
+          sampleRate: task.qualitySampleRate ?? null,
+          tier:       (task.qualityTier as QualityTier) ?? 'unknown',
+        } : null,
         progress,
         queuedAt:       task.queuedAt,
         startedAt:      task.startedAt || null,
@@ -710,6 +717,7 @@ export class DownloadService {
         slskdUsername:  null,
         slskdDirectory: null,
         fileCount:      null,
+        quality:        null,
         progress:       null,
         queuedAt:       task.queuedAt,
         startedAt:      null,
@@ -730,13 +738,18 @@ export class DownloadService {
     id: string,
     status: DownloadTaskStatus,
     details?: {
-      slskdSearchId?:  string;
-      slskdUsername?:  string;
-      slskdDirectory?: string;
-      slskdFileIds?:   string[];
-      downloadPath?:   string;
-      fileCount?:      number;
-      errorMessage?:   string;
+      slskdSearchId?:     string;
+      slskdUsername?:     string;
+      slskdDirectory?:    string;
+      slskdFileIds?:      string[];
+      downloadPath?:      string;
+      fileCount?:         number;
+      qualityFormat?:     string;
+      qualityBitRate?:    number;
+      qualityBitDepth?:   number;
+      qualitySampleRate?: number;
+      qualityTier?:       string;
+      errorMessage?:      string;
     }
   ): Promise<void> {
     const updateData: Record<string, unknown> = { status };

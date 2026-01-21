@@ -16,8 +16,12 @@ export interface SlskdSearchResponse {
  * File information from slskd search results
  */
 export interface SlskdFile {
-  filename: string;
-  size?:    number;
+  filename:    string;
+  size?:       number;
+  bitRate?:    number;    // Bitrate in kbps
+  bitDepth?:   number;    // Bit depth (16, 24, etc.)
+  sampleRate?: number;    // Sample rate in Hz (44100, 96000)
+  length?:     number;    // Duration in seconds
 }
 
 /**

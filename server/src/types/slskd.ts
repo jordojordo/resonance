@@ -6,6 +6,39 @@ import type { SlskdFile, SlskdSearchResponse } from '@server/types/slskd-client'
 import type { SearchQueryBuilder } from '@server/services/SearchQueryBuilder';
 
 /**
+ * Supported audio formats detected from file extensions
+ */
+export type AudioFormat = 'flac' | 'wav' | 'alac' | 'aiff' | 'mp3' | 'm4a' | 'aac' | 'ogg' | 'opus' | 'wma' | 'unknown';
+
+/**
+ * Quality tier classification
+ */
+export type QualityTier = 'lossless' | 'high' | 'standard' | 'low' | 'unknown';
+
+/**
+ * Extracted quality information from file metadata
+ */
+export interface QualityInfo {
+  format:     AudioFormat;
+  bitRate:    number | null;
+  bitDepth:   number | null;
+  sampleRate: number | null;
+  tier:       QualityTier;
+}
+
+/**
+ * User preferences for audio quality filtering and scoring
+ */
+export interface QualityPreferences {
+  enabled:          boolean;
+  preferredFormats: string[];
+  minBitrate:       number;
+  preferLossless:   boolean;
+  rejectLowQuality: boolean;
+  rejectLossless:   boolean;
+}
+
+/**
  * Entry from the wishlist file with optional year metadata
  */
 export interface WishlistEntry {
@@ -32,6 +65,7 @@ export interface SearchConfig {
   maxRetryAttempts:     number;
   simplifyOnRetry:      boolean;
   retryDelayMs:         number;
+  qualityPreferences?:  QualityPreferences;
 }
 
 /**
