@@ -2,6 +2,7 @@ import type {
   ActiveDownload, DownloadProgress, DownloadStats, ScoredSearchResponse, DirectoryGroup
 } from '@server/types/downloads';
 import type { SlskdTransferFile, SlskdUserTransfers, SlskdSearchResponse, SlskdFile } from '@server/types/slskd-client';
+import { cachedSearchResultsSchema } from '@server/types/downloads';
 import type { QualityPreferences } from '@server/types/slskd';
 
 import fs from 'fs';
@@ -32,7 +33,7 @@ import {
   shouldRejectFile,
 } from '@server/utils/audioQuality';
 import path from 'path';
-import { MUSIC_EXTENSIONS, QUALITY_SCORES, DEFAULT_PREFERRED_FORMATS } from '@server/constants/slskd';
+import { MUSIC_EXTENSIONS, QUALITY_SCORES, DEFAULT_PREFERRED_FORMATS, MB_TO_BYTES } from '@server/constants/slskd';
 
 async function pathExists(candidatePath: string): Promise<boolean> {
   try {
@@ -898,7 +899,16 @@ export class DownloadService {
     let responses: SlskdSearchResponse[];
 
     try {
-      responses = JSON.parse(task.searchResults) as SlskdSearchResponse[];
+      const parsed = JSON.parse(task.searchResults);
+      const parseResult = cachedSearchResultsSchema.safeParse(parsed);
+
+      if (!parseResult.success) {
+        logger.error(`Invalid search results format for task ${ taskId }`, { errors: parseResult.error.issues });
+
+        return null;
+      }
+
+      responses = parseResult.data as SlskdSearchResponse[];
     } catch {
       logger.error(`Failed to parse search results for task ${ taskId }`);
 
@@ -946,8 +956,8 @@ export class DownloadService {
   ): ScoredSearchResponse[] {
     const config = getConfig();
     const searchSettings = config.slskd?.search;
-    const minFileSizeBytes = (searchSettings?.min_file_size_mb ?? 1) * 1024 * 1024;
-    const maxFileSizeBytes = (searchSettings?.max_file_size_mb ?? 500) * 1024 * 1024;
+    const minFileSizeBytes = (searchSettings?.min_file_size_mb ?? 1) * MB_TO_BYTES;
+    const maxFileSizeBytes = (searchSettings?.max_file_size_mb ?? 500) * MB_TO_BYTES;
 
     return responses
       .filter(response => !skippedUsernames.includes(response.username))
@@ -1050,6 +1060,11 @@ export class DownloadService {
       return { success: false, error: `Task is not pending selection (status: ${ task.status })` };
     }
 
+    // Check if selection has expired
+    if (task.selectionExpiresAt && task.selectionExpiresAt < new Date()) {
+      return { success: false, error: 'Selection has expired' };
+    }
+
     if (!task.searchResults) {
       return { success: false, error: 'No search results available' };
     }
@@ -1057,7 +1072,16 @@ export class DownloadService {
     let responses: SlskdSearchResponse[];
 
     try {
-      responses = JSON.parse(task.searchResults) as SlskdSearchResponse[];
+      const parsed = JSON.parse(task.searchResults);
+      const parseResult = cachedSearchResultsSchema.safeParse(parsed);
+
+      if (!parseResult.success) {
+        logger.error(`Invalid search results format for task ${ taskId }`, { errors: parseResult.error.issues });
+
+        return { success: false, error: 'Invalid search results format' };
+      }
+
+      responses = parseResult.data as SlskdSearchResponse[];
     } catch {
       return { success: false, error: 'Failed to parse search results' };
     }
@@ -1065,7 +1089,10 @@ export class DownloadService {
     const selectedResponse = responses.find(r => r.username === username);
 
     if (!selectedResponse) {
-      return { success: false, error: `User ${ username } not found in search results` };
+      // Sanitize username for error message (truncate and escape HTML chars)
+      const sanitizedUsername = username.slice(0, 50).replace(/[<>&"']/g, '');
+
+      return { success: false, error: `User ${ sanitizedUsername } not found in search results` };
     }
 
     if (!this.slskdClient) {
@@ -1075,8 +1102,8 @@ export class DownloadService {
     // Select files from the specified directory or all music files
     const config = getConfig();
     const searchSettings = config.slskd?.search;
-    const minFileSizeBytes = (searchSettings?.min_file_size_mb ?? 1) * 1024 * 1024;
-    const maxFileSizeBytes = (searchSettings?.max_file_size_mb ?? 500) * 1024 * 1024;
+    const minFileSizeBytes = (searchSettings?.min_file_size_mb ?? 1) * MB_TO_BYTES;
+    const maxFileSizeBytes = (searchSettings?.max_file_size_mb ?? 500) * MB_TO_BYTES;
 
     const filesToEnqueue = selectedResponse.files.filter(f => {
       if (!this.isMusicFile(f.filename)) {
@@ -1263,7 +1290,16 @@ export class DownloadService {
     let responses: SlskdSearchResponse[];
 
     try {
-      responses = JSON.parse(task.searchResults) as SlskdSearchResponse[];
+      const parsed = JSON.parse(task.searchResults);
+      const parseResult = cachedSearchResultsSchema.safeParse(parsed);
+
+      if (!parseResult.success) {
+        logger.error(`Invalid search results format for task ${ taskId }`, { errors: parseResult.error.issues });
+
+        return { success: false, error: 'Invalid search results format' };
+      }
+
+      responses = parseResult.data as SlskdSearchResponse[];
     } catch {
       return { success: false, error: 'Failed to parse search results' };
     }

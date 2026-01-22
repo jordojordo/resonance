@@ -292,7 +292,15 @@ class DownloadsController extends BaseController {
       const result = await this.downloadService.selectSearchResult(id, username, directory);
 
       if (!result.success) {
-        return res.status(400).json({
+        let statusCode = 400;
+
+        if (result.error?.includes('not found')) {
+          statusCode = 404;
+        } else if (result.error?.includes('expired')) {
+          statusCode = 410;
+        }
+
+        return res.status(statusCode).json({
           success: false,
           error:   result.error,
         });
@@ -323,7 +331,15 @@ class DownloadsController extends BaseController {
       const result = await this.downloadService.skipSearchResult(id, username);
 
       if (!result.success) {
-        return res.status(400).json({
+        let statusCode = 400;
+
+        if (result.error?.includes('not found')) {
+          statusCode = 404;
+        } else if (result.error?.includes('expired')) {
+          statusCode = 410;
+        }
+
+        return res.status(statusCode).json({
           success: false,
           error:   result.error,
         });
@@ -354,7 +370,15 @@ class DownloadsController extends BaseController {
       const result = await this.downloadService.retrySearch(id, query);
 
       if (!result.success) {
-        return res.status(400).json({
+        let statusCode = 400;
+
+        if (result.error?.includes('not found')) {
+          statusCode = 404;
+        } else if (result.error?.includes('expired')) {
+          statusCode = 410;
+        }
+
+        return res.status(statusCode).json({
           success: false,
           error:   result.error,
         });
@@ -377,7 +401,15 @@ class DownloadsController extends BaseController {
       const result = await this.downloadService.autoSelectBest(id);
 
       if (!result.success) {
-        return res.status(400).json({
+        let statusCode = 400;
+
+        if (result.error?.includes('not found')) {
+          statusCode = 404;
+        } else if (result.error?.includes('expired')) {
+          statusCode = 410;
+        }
+
+        return res.status(statusCode).json({
           success: false,
           error:   result.error,
         });

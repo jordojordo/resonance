@@ -229,3 +229,24 @@ export type SkipResultRequest = z.infer<typeof skipResultRequestSchema>;
 export const retrySearchRequestSchema = z.object({ query: z.string().optional() });
 
 export type RetrySearchRequest = z.infer<typeof retrySearchRequestSchema>;
+
+/**
+ * Cached slskd search response schema for validating JSON parsed data
+ */
+export const slskdSearchResponseSchema = z.object({
+  username:          z.string(),
+  files:             z.array(z.object({
+    filename:   z.string(),
+    size:       z.number().optional(),
+    bitRate:    z.number().optional(),
+    bitDepth:   z.number().optional(),
+    sampleRate: z.number().optional(),
+    length:     z.number().optional(),
+  })),
+  hasFreeUploadSlot: z.boolean().optional(),
+  uploadSpeed:       z.number().optional(),
+});
+
+export const cachedSearchResultsSchema = z.array(slskdSearchResponseSchema);
+
+export type CachedSearchResults = z.infer<typeof cachedSearchResultsSchema>;

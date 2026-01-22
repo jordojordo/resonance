@@ -32,6 +32,7 @@ import {
   MUSIC_EXTENSIONS,
   QUALITY_SCORES,
   DEFAULT_PREFERRED_FORMATS,
+  MAX_STORED_SELECTION_RESULTS,
 } from '@server/constants/slskd';
 import {
   extractQualityInfo,
@@ -534,11 +535,13 @@ async function attemptSearch(params: {
       selectionExpiresAt = new Date(Date.now() + selection.timeoutHours * 60 * 60 * 1000);
     }
 
-    // Store the search results in the database
+    // Store the search results in the database (limited to reduce memory usage)
+    const storedResultsLimit = Math.min(maxResponsesToEval, MAX_STORED_SELECTION_RESULTS);
+
     await DownloadTask.update(
       {
         status:             'pending_selection',
-        searchResults:      JSON.stringify(responses.slice(0, maxResponsesToEval)),
+        searchResults:      JSON.stringify(responses.slice(0, storedResultsLimit)),
         searchQuery:        query,
         selectionExpiresAt,
         slskdSearchId:      searchId,
@@ -554,7 +557,7 @@ async function attemptSearch(params: {
       id:                 task.id,
       artist:             task.artist,
       album:              task.album,
-      resultCount:        Math.min(responses.length, maxResponsesToEval),
+      resultCount:        Math.min(responses.length, storedResultsLimit),
       selectionExpiresAt: selectionExpiresAt ?? null,
     });
 
@@ -562,7 +565,7 @@ async function attemptSearch(params: {
 
     return {
       status:      'pending_selection',
-      responses:   responses.slice(0, maxResponsesToEval),
+      responses:   responses.slice(0, storedResultsLimit),
       searchId,
       searchQuery: query,
     } as SearchPendingSelectionResult;

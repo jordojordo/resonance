@@ -278,7 +278,7 @@ DownloadTask.init(
       { fields: ['organized_at'] },
       { fields: ['queued_at'] },
       { fields: ['wishlist_item_id'] },
-      { fields: ['selection_expires_at'] },
+      { fields: ['status', 'selection_expires_at'] }, // Composite for expiration queries
       // Note: wishlist_key already has unique constraint at column level
     ],
   },
