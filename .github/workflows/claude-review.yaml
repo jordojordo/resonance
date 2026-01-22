@@ -8,10 +8,8 @@ on:
   pull_request_review_comment:
     types: [created]
 
-# Define allowed users as environment variables for easy management
 env:
-  # Comma-separated list of GitHub usernames allowed to trigger Claude
-  ALLOWED_USERS: "jordojordo,jamus"  # <-- EDIT THIS LIST
+  ALLOWED_USERS: "jordojordo,jordonet"
 
 jobs:
   # Automatic PR review on open/update
