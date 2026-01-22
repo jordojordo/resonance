@@ -43,6 +43,20 @@ export interface DownloadProgressEvent {
 
 export type DownloadStatsUpdatedEvent = DownloadStats;
 
+export interface DownloadPendingSelectionEvent {
+  id:                 string;
+  artist:             string;
+  album:              string;
+  resultCount:        number;
+  selectionExpiresAt: string | null;
+}
+
+export interface DownloadSelectionExpiredEvent {
+  id:     string;
+  artist: string;
+  album:  string;
+}
+
 /**
  * Jobs namespace event payloads
  */
