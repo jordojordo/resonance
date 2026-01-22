@@ -203,6 +203,7 @@ The web UI provides:
 - **Dashboard** - Quick stats and recent activity
 - **Pending Queue** - Review and approve/reject recommendations
 - **Downloads** - Monitor slskd download status
+- **Users** - Manage Soulseek user reputation (trusted/blocked lists)
 - **Settings** - Configure discovery parameters
 
 ## Authentication
@@ -248,6 +249,8 @@ GET  /api/v1/library/stats      # Library sync statistics
 POST /api/v1/library/sync       # Trigger library sync
 POST /api/v1/library/organize   # Trigger library organize
 GET  /api/v1/library/organize/status # Library organize status
+GET  /api/v1/users              # List users (reputation tracking)
+GET  /api/v1/users/stats        # User reputation statistics
 GET  /api/v1/health             # Health check
 ```
 

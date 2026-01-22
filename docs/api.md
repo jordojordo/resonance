@@ -489,6 +489,192 @@ Update configuration values.
 
 ---
 
+### Users (Reputation Tracking)
+
+Manage Soulseek user reputation for download source selection. Requires `slskd.user_reputation.enabled: true` in config.
+
+#### GET /api/v1/users
+
+List users with optional filtering and pagination.
+
+**Query Parameters:**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `status` | string | all | Filter by status: `neutral`, `trusted`, `flagged`, `blocked`, or `all` |
+| `search` | string | - | Search by username |
+| `sort` | string | `lastSeenAt` | Sort by: `username`, `status`, `successCount`, `failureCount`, `lastSeenAt` |
+| `order` | string | `desc` | Sort order: `asc` or `desc` |
+| `limit` | int | 50 | Max items to return |
+| `offset` | int | 0 | Pagination offset |
+
+**Response:**
+```json
+{
+  "users": [
+    {
+      "id": "uuid-here",
+      "username": "uploader123",
+      "status": "trusted",
+      "successCount": 15,
+      "failureCount": 1,
+      "averageSpeed": 1500000,
+      "totalBytes": 4500000000,
+      "qualityScore": 85,
+      "notes": null,
+      "lastSeenAt": "2026-01-20T10:00:00Z",
+      "createdAt": "2026-01-01T10:00:00Z",
+      "updatedAt": "2026-01-20T10:00:00Z"
+    }
+  ],
+  "total": 45,
+  "limit": 50,
+  "offset": 0
+}
+```
+
+#### GET /api/v1/users/stats
+
+Get user reputation statistics.
+
+**Response:**
+```json
+{
+  "total": 150,
+  "neutral": 120,
+  "trusted": 20,
+  "flagged": 7,
+  "blocked": 3,
+  "enabled": true
+}
+```
+
+#### GET /api/v1/users/:id
+
+Get a single user by ID.
+
+**Response:**
+```json
+{
+  "id": "uuid-here",
+  "username": "uploader123",
+  "status": "trusted",
+  "successCount": 15,
+  "failureCount": 1,
+  "averageSpeed": 1500000,
+  "totalBytes": 4500000000,
+  "qualityScore": 85,
+  "notes": "Reliable source for FLAC",
+  "lastSeenAt": "2026-01-20T10:00:00Z"
+}
+```
+
+#### PUT /api/v1/users/:id
+
+Update a user's status or notes.
+
+**Request Body:**
+```json
+{
+  "status": "blocked",
+  "notes": "Consistently incomplete uploads"
+}
+```
+
+**Response:**
+```json
+{
+  "id": "uuid-here",
+  "username": "uploader123",
+  "status": "blocked",
+  "notes": "Consistently incomplete uploads"
+}
+```
+
+#### PUT /api/v1/users/bulk
+
+Bulk update multiple users.
+
+**Request Body:**
+```json
+{
+  "ids": ["uuid-1", "uuid-2"],
+  "status": "trusted"
+}
+```
+
+**Response:**
+```json
+{
+  "updated": 2
+}
+```
+
+#### DELETE /api/v1/users
+
+Delete users by IDs or status.
+
+**Request Body:**
+```json
+{
+  "ids": ["uuid-1", "uuid-2"]
+}
+```
+
+Or delete all users with a specific status:
+```json
+{
+  "status": "neutral"
+}
+```
+
+**Response:**
+```json
+{
+  "deleted": 2
+}
+```
+
+#### POST /api/v1/users/export
+
+Export users by status.
+
+**Request Body:**
+```json
+{
+  "statuses": ["trusted", "blocked"]
+}
+```
+
+**Response:**
+```json
+{
+  "trusted": ["user1", "user2", "user3"],
+  "blocked": ["baduser1", "baduser2"]
+}
+```
+
+#### POST /api/v1/users/import
+
+Import users with specified statuses.
+
+**Request Body:**
+```json
+{
+  "trusted": ["user1", "user2"],
+  "blocked": ["baduser1"]
+}
+```
+
+**Response:**
+```json
+{
+  "imported": 3,
+  "skipped": 0
+}
+```
+
+---
+
 ### Search
 
 #### GET /api/v1/search/musicbrainz

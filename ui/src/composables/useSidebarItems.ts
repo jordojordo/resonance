@@ -51,6 +51,12 @@ export const useSidebarItems = () => {
         icon:  'pi-folder-open',
         badge: stats.value?.unorganized ?? undefined,
       },
+      {
+        key:   ROUTE_NAMES.USERS,
+        label: 'Users',
+        to:    ROUTE_PATHS.USERS,
+        icon:  'pi-users',
+      },
     ];
   });
 

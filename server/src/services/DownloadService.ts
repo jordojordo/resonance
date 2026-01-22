@@ -18,6 +18,7 @@ import { triggerJob } from '@server/plugins/jobs';
 
 import SlskdClient from './clients/SlskdClient';
 import WishlistService from './WishlistService';
+import { userReputationService } from './UserReputationService';
 import {
   joinDownloadsPath, normalizeSlskdPath, slskdDirectoryToRelativeDownloadPath, slskdPathBasename, toSafeRelativePath 
 } from '@server/utils/slskdPaths';
@@ -368,6 +369,33 @@ export class DownloadService {
         fileCount:      task.fileCount || files.length,
         errorMessage:   status === 'failed' ? errorMessage : undefined,
       });
+
+      // Track user reputation for terminal states
+      if (task.slskdUsername) {
+        if (status === 'completed') {
+          // Calculate metrics from transfer files
+          const totalBytes = files.reduce((sum, f) => sum + (f.size || 0), 0);
+          const avgSpeed = files.length > 0? Math.round(files.reduce((sum, f) => sum + (f.averageSpeed || 0), 0) / files.length): 0;
+
+          // Map quality tier to score (0-100)
+          const qualityTierScores: Record<string, number> = {
+            lossless: 100,
+            high:     80,
+            standard: 60,
+            low:      40,
+            unknown:  50,
+          };
+          const qualityScore = qualityTierScores[task.qualityTier ?? 'unknown'] ?? 50;
+
+          await userReputationService.recordSuccess(task.slskdUsername, {
+            bytes:        totalBytes,
+            speed:        avgSpeed,
+            qualityScore,
+          });
+        } else if (status === 'failed') {
+          await userReputationService.recordFailure(task.slskdUsername);
+        }
+      }
 
       task.status = status as DownloadTaskStatus;
       task.errorMessage = status === 'failed' ? errorMessage : undefined;

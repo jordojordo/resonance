@@ -76,6 +76,15 @@ const SlskdQualityPreferencesSchema = z.object({
   reject_lossless:    z.boolean().default(false),
 });
 
+const SlskdUserReputationSchema = z.object({
+  enabled:              z.boolean().default(false),
+  auto_trust_threshold: z.number().int().min(1).max(100)
+    .default(5),
+  auto_flag_threshold:  z.number().int().min(1).max(100)
+    .default(3),
+  track_quality: z.boolean().default(true),
+});
+
 const SlskdSearchSchema = z.object({
   // Query templates - variables: {artist}, {album}, {title}, {year}
   album_query_template:      z.string().default('{artist} - {album}'),
@@ -116,6 +125,7 @@ const SlskdSettingsSchema = z.object({
   search_timeout:   z.number().int().positive().default(15000),
   min_album_tracks: z.number().int().positive().default(3),
   search:           SlskdSearchSchema.optional(),
+  user_reputation:  SlskdUserReputationSchema.optional(),
 });
 
 const NavidromeSettingsSchema = z.object({
@@ -277,6 +287,7 @@ export type SlskdSettings = z.infer<typeof SlskdSettingsSchema>;
 export type SlskdSearchSettings = z.infer<typeof SlskdSearchSchema>;
 export type SlskdSearchRetrySettings = z.infer<typeof SlskdSearchRetrySchema>;
 export type SlskdQualityPreferencesSettings = z.infer<typeof SlskdQualityPreferencesSchema>;
+export type SlskdUserReputationSettings = z.infer<typeof SlskdUserReputationSchema>;
 export type CatalogDiscoverySettings = z.infer<typeof CatalogDiscoverySettingsSchema>;
 export type LibraryDuplicateSettings = z.infer<typeof LibraryDuplicateSettingsSchema>;
 export type LibraryOrganizeSettings = z.infer<typeof LibraryOrganizeSettingsSchema>;

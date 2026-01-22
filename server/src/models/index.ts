@@ -56,3 +56,10 @@ export type {
   WishlistItemType,
   WishlistItemSource,
 } from './WishlistItem';
+
+export { default as SlskdUser } from './SlskdUser';
+export type {
+  SlskdUserAttributes,
+  SlskdUserCreationAttributes,
+  SlskdUserStatus,
+} from './SlskdUser';

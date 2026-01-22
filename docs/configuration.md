@@ -116,6 +116,14 @@ slskd:
       reject_low_quality: false   # Hard reject files below min_bitrate (vs just deprioritize)
       reject_lossless: false      # Hard reject lossless files (for users who only want lossy)
 
+  # User reputation tracking (optional)
+  # Track download outcomes to prioritize reliable uploaders
+  user_reputation:
+    enabled: false              # Opt-in feature (disabled by default)
+    auto_trust_threshold: 5     # Auto-trust after N successful downloads
+    auto_flag_threshold: 3      # Flag for review after N failed downloads
+    track_quality: true         # Include audio quality in reputation scoring
+
 # =============================================================================
 # Catalog Discovery
 # Find new artists similar to ones you already own via Last.fm
@@ -356,6 +364,26 @@ Optional quality preferences configuration under `slskd.search.quality_preferenc
 When `reject_low_quality: true`, files in the "Low" tier are filtered out entirely. When `false`, they are just scored lower and deprioritized.
 
 When `reject_lossless: true`, lossless files (FLAC, WAV, ALAC, AIFF) are filtered out entirely. This is useful for users with limited storage who only want lossy formats.
+
+### slskd User Reputation
+
+Optional user reputation tracking under `slskd.user_reputation`:
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `enabled` | bool | `false` | Enable user reputation tracking (opt-in) |
+| `auto_trust_threshold` | int | `5` | Auto-trust users after N successful downloads |
+| `auto_flag_threshold` | int | `3` | Flag users for review after N failed downloads |
+| `track_quality` | bool | `true` | Include audio quality in reputation scoring |
+
+**How it works:**
+- Tracks download outcomes per Soulseek user
+- **Trusted** users get priority in search result ranking (+100 score bonus)
+- **Blocked** users are excluded from search results entirely
+- **Flagged** users require manual review before blocking
+- Users start as **neutral** and accumulate reputation over time
+
+This feature is opt-in and disabled by default. Enable it if you want to avoid unreliable uploaders.
 
 ### Catalog Discovery
 

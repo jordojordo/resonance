@@ -21,6 +21,7 @@ import { SlskdClient } from '@server/services/clients/SlskdClient';
 import { isJobCancelled } from '@server/plugins/jobs';
 
 import { JOB_NAMES } from '@server/constants/jobs';
+import { userReputationService } from '@server/services/UserReputationService';
 import {
   SEARCH_TIMEOUT_MS,
   SEARCH_POLL_INTERVAL_MS,
@@ -480,16 +481,39 @@ async function attemptSearch(params: {
     return { status: 'failed' };
   }
 
-  const responses = await slskdClient.getSearchResponses(searchId);
+  const rawResponses = await slskdClient.getSearchResponses(searchId);
 
-  if (responses.length === 0) {
+  if (rawResponses.length === 0) {
     await slskdClient.deleteSearch(searchId);
 
     // Don't update task status here, let the caller handle it for retry logic
     return { status: 'failed' };
   }
 
-  const response = pickBestResponse(responses, maxResponsesToEval, minFileSizeBytes, maxFileSizeBytes, qualityPreferences);
+  // Filter out blocked users and get reputation scores
+  const responses = await userReputationService.filterByReputation(rawResponses);
+
+  if (responses.length === 0) {
+    logger.warn(`All ${ rawResponses.length } search results filtered due to blocked users for ${ wishlistKey }`);
+    await slskdClient.deleteSearch(searchId);
+
+    return { status: 'failed' };
+  }
+
+  // Build reputation score map for trusted user bonuses
+  const reputationScores = new Map<string, number>();
+
+  if (userReputationService.isEnabled()) {
+    for (const resp of responses.slice(0, maxResponsesToEval)) {
+      const bonus = await userReputationService.getScoreBonus(resp.username);
+
+      if (bonus > 0) {
+        reputationScores.set(resp.username.toLowerCase(), bonus);
+      }
+    }
+  }
+
+  const response = pickBestResponse(responses, maxResponsesToEval, minFileSizeBytes, maxFileSizeBytes, qualityPreferences, reputationScores);
 
   if (!response) {
     await slskdClient.deleteSearch(searchId);
@@ -541,6 +565,7 @@ function pickBestResponse(
   minFileSizeBytes: number,
   maxFileSizeBytes: number,
   qualityPreferences?: QualityPreferences,
+  reputationScores?: Map<string, number>,
 ): SlskdSearchResponse | null {
   // Limit responses to evaluate for performance
   const toEvaluate = responses.slice(0, maxToEvaluate);
@@ -579,14 +604,18 @@ function pickBestResponse(
       // Calculate quality score
       const qualityScore = qualityPreferences?.enabled ? calculateAverageQualityScore(musicFiles, qualityPreferences) : QUALITY_SCORES.unknown;
 
+      // Get reputation bonus for trusted users (+100)
+      const reputationBonus = reputationScores?.get(response.username.toLowerCase()) ?? 0;
+
       return {
         response,
         musicFiles,
-        musicFileCount: musicFiles.length,
+        musicFileCount:  musicFiles.length,
         qualityScore,
-        totalSize:      musicFiles.reduce((sum, file) => sum + (file.size || 0), 0),
-        uploadSpeed:    response.uploadSpeed || 0,
-        hasSlot:        response.hasFreeUploadSlot ? 1 : 0,
+        reputationBonus,
+        totalSize:       musicFiles.reduce((sum, file) => sum + (file.size || 0), 0),
+        uploadSpeed:     response.uploadSpeed || 0,
+        hasSlot:         response.hasFreeUploadSlot ? 1 : 0,
       };
     })
     .filter(scored => scored.musicFileCount > 0);
@@ -595,10 +624,15 @@ function pickBestResponse(
     return null;
   }
 
-  // Sort: hasSlot → qualityScore → musicFileCount → totalSize → uploadSpeed
+  // Sort: hasSlot → reputationBonus → qualityScore → musicFileCount → totalSize → uploadSpeed
   scored.sort((a, b) => {
     if (b.hasSlot !== a.hasSlot) {
       return b.hasSlot - a.hasSlot;
+    }
+
+    // Trusted users get priority
+    if (b.reputationBonus !== a.reputationBonus) {
+      return b.reputationBonus - a.reputationBonus;
     }
 
     if (b.qualityScore !== a.qualityScore) {
