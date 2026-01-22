@@ -19,6 +19,7 @@
 - **Multi-source discovery** - Combines ListenBrainz recommendations (based on what you listen to) with Last.fm similar artists (based on what you own)
 - **Unified approval queue** - Review all recommendations in one place before downloading
 - **Preview player** - Listen to 30-second audio previews before approving (via Deezer/Spotify)
+- **Interactive source selection** - Compare multiple download sources, view file quality, and choose the best one (optional manual mode)
 - **Web UI** - Dashboard with cover art, metadata, and one-click approve/reject
 - **Automatic downloads** - Integrates with slskd (Soulseek) for P2P music downloads
 - **Library awareness** - Checks your existing library to avoid duplicates
@@ -106,6 +107,10 @@ slskd:
   #     enabled: true
   #     prefer_lossless: true
   #     min_bitrate: 256
+  # Optional: Interactive selection mode (manually choose download sources)
+  # selection:
+  #   mode: "manual"           # "auto" (default) or "manual"
+  #   timeout_hours: 24        # Hours before selection expires
 
 # Catalog discovery (based on library artists → Last.fm similar)
 catalog_discovery:

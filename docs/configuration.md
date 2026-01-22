@@ -116,6 +116,12 @@ slskd:
       reject_low_quality: false   # Hard reject files below min_bitrate (vs just deprioritize)
       reject_lossless: false      # Hard reject lossless files (for users who only want lossy)
 
+  # Interactive selection mode (optional)
+  # Allows manual review and selection of search results before downloading
+  selection:
+    mode: "auto"                  # "auto" (default) or "manual"
+    timeout_hours: 24             # Hours before pending selection expires (0 = no timeout)
+
 # =============================================================================
 # Catalog Discovery
 # Find new artists similar to ones you already own via Last.fm
@@ -356,6 +362,29 @@ Optional quality preferences configuration under `slskd.search.quality_preferenc
 When `reject_low_quality: true`, files in the "Low" tier are filtered out entirely. When `false`, they are just scored lower and deprioritized.
 
 When `reject_lossless: true`, lossless files (FLAC, WAV, ALAC, AIFF) are filtered out entirely. This is useful for users with limited storage who only want lossy formats.
+
+### slskd Interactive Selection
+
+Optional interactive selection configuration under `slskd.selection`:
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `mode` | string | `auto` | `auto` (automatic best-match) or `manual` (user selects from results) |
+| `timeout_hours` | int | `24` | Hours before pending selection expires and fails (0 = no timeout) |
+
+**Selection Modes:**
+- **auto** - Default behavior. Automatically selects the best matching result based on quality, file count, and user availability.
+- **manual** - Shows all search results in the UI for manual review. Users can compare sources, view file lists, and choose the preferred download source.
+
+When `mode: manual`, downloads enter a `pending_selection` status after search completes. Users can:
+- View all available sources with quality info and file counts
+- Expand results to see individual files
+- Select a specific source to download from
+- Skip sources they don't want
+- Edit the search query and retry
+- Use auto-select to let the algorithm choose
+
+If `timeout_hours` is set and the user doesn't select within that time, the download is marked as failed.
 
 ### Catalog Discovery
 

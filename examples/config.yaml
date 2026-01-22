@@ -120,6 +120,12 @@ slskd:
       reject_low_quality: false   # Hard reject files below min_bitrate (vs just deprioritize)
       reject_lossless: false      # Hard reject lossless files (for users who only want lossy)
 
+  # Interactive selection mode (optional)
+  # Allows manual review and selection of search results before downloading
+  selection:
+    mode: "auto"                  # "auto" (default behavior) or "manual" (user selects)
+    timeout_hours: 24             # Hours before pending selection expires (0 = no timeout)
+
 # -----------------------------------------------------------------------------
 # Catalog Discovery (Optional)
 # Find new artists similar to ones you already own via Last.fm

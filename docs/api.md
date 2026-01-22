@@ -334,6 +334,117 @@ Search slskd directly.
 }
 ```
 
+#### GET /api/v1/downloads/:id/search-results
+
+Get cached search results for a download task in `pending_selection` status.
+
+**Response:**
+```json
+{
+  "task": {
+    "id": "abc123-...",
+    "artist": "Justice",
+    "album": "Cross",
+    "searchQuery": "Justice Cross",
+    "selectionExpiresAt": "2026-01-12T10:00:00Z"
+  },
+  "results": [
+    {
+      "response": {
+        "username": "uploader123",
+        "hasFreeUploadSlot": true,
+        "uploadSpeed": 1200000,
+        "files": [...]
+      },
+      "score": 850,
+      "musicFileCount": 12,
+      "totalSize": 450000000,
+      "qualityInfo": {
+        "format": "FLAC",
+        "bitDepth": 16,
+        "sampleRate": 44100,
+        "tier": "lossless"
+      },
+      "directories": [
+        {
+          "path": "Music/Justice - Cross (2007) [FLAC]",
+          "files": [...],
+          "totalSize": 450000000,
+          "qualityInfo": {...}
+        }
+      ]
+    }
+  ],
+  "skippedUsernames": []
+}
+```
+
+#### POST /api/v1/downloads/:id/select
+
+Select a specific search result for download.
+
+**Request Body:**
+```json
+{
+  "username": "uploader123",
+  "directory": "Music/Justice - Cross (2007) [FLAC]"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true
+}
+```
+
+#### POST /api/v1/downloads/:id/skip
+
+Skip a search result (hide from list for this download).
+
+**Request Body:**
+```json
+{
+  "username": "uploader123"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true
+}
+```
+
+#### POST /api/v1/downloads/:id/retry-search
+
+Retry search with an optional modified query.
+
+**Request Body:**
+```json
+{
+  "query": "Justice Cross 2007 FLAC"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true
+}
+```
+
+#### POST /api/v1/downloads/:id/auto-select
+
+Use the automatic selection algorithm to pick the best result.
+
+**Response:**
+```json
+{
+  "success": true
+}
+```
+
 ---
 
 ### Actions
@@ -545,6 +656,28 @@ Download progress updates.
   "id": "download-id",
   "progress": 65,
   "speed": 1200000
+}
+```
+
+**Pending Selection Event:**
+```json
+{
+  "type": "pending_selection",
+  "id": "download-id",
+  "artist": "Justice",
+  "album": "Cross",
+  "resultCount": 15,
+  "selectionExpiresAt": "2026-01-12T10:00:00Z"
+}
+```
+
+**Selection Expired Event:**
+```json
+{
+  "type": "selection_expired",
+  "id": "download-id",
+  "artist": "Justice",
+  "album": "Cross"
 }
 ```
 
