@@ -108,3 +108,31 @@ App config is YAML at `$CONFIG_PATH` (default `/config/config.yaml`). See `confi
 ## Testing
 
 Server tests use Vitest. Test files: `*.test.ts` or `*.spec.ts` in `src/` or `tests/`. Uses `nock` for HTTP mocking, `supertest` for API testing.
+
+## Implementation Guidelines
+
+### Pacing & Review Checkpoints
+
+- **One file at a time.** Implement changes to a single file, then stop for review before moving to the next. Do not modify multiple files in a single response unless they are trivially coupled (e.g., a type definition and its single consumer).
+
+- **100 line limit.** If a change exceeds ~100 lines, break it into smaller chunks. Stop and ask how to proceed.
+
+- **Show structure first.** Before implementing a new module or feature, show the proposed interfaces, types, and function signatures. Wait for approval before writing implementation bodies.
+
+- **Explain as you go.** When writing code, include brief inline comments or explanations for non-obvious decisions. If you can't explain why, reconsider the approach.
+
+- **No drive-by refactors.** Only modify code directly related to the current task. If you notice something that should be refactored, note it separately—don't fix it in the same change.
+
+### Planning Phase
+
+When asked to implement a feature:
+1. Ask clarifying questions first—do not assume
+2. Propose a plan with discrete, reviewable steps
+3. Wait for approval before starting implementation
+4. Implement one step at a time
+
+### Testing
+
+- New features require tests before the implementation is considered complete
+- Run `pnpm run test:run` to verify changes don't break existing tests
+
