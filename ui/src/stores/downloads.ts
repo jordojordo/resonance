@@ -35,6 +35,10 @@ export const useDownloadsStore = defineStore('downloads', () => {
     offset: 0,
   });
 
+  const selectedTaskId = ref<string | null>(null);
+  const selectionModalVisible = ref(false);
+  const selectionLoading = ref(false);
+
   // Separate offset tracking for each list to avoid cross-tab pagination issues
   const completedOffset = ref(0);
   const failedOffset = ref(0);
@@ -204,6 +208,84 @@ export const useDownloadsStore = defineStore('downloads', () => {
     filters.value.offset = 0;
     completedOffset.value = 0;
     failedOffset.value = 0;
+    selectedTaskId.value = null;
+    selectionModalVisible.value = false;
+  }
+
+  function openSelectionModal(taskId: string) {
+    selectedTaskId.value = taskId;
+    selectionModalVisible.value = true;
+  }
+
+  function closeSelectionModal() {
+    selectedTaskId.value = null;
+    selectionModalVisible.value = false;
+  }
+
+  async function selectResult(taskId: string, username: string, directory?: string) {
+    selectionLoading.value = true;
+
+    try {
+      await downloadsApi.selectResult(taskId, username, directory);
+      showSuccess('Download queued', `Selected source: ${ username }`);
+      closeSelectionModal();
+
+      await Promise.all([fetchActive(), fetchStats()]);
+    } catch(e) {
+      showError('Failed to select source');
+      throw e;
+    } finally {
+      selectionLoading.value = false;
+    }
+  }
+
+  /**
+   * Skip a search result source.
+   * Note: Unlike other selection methods, this doesn't use selectionLoading state
+   * because the component performs optimistic local UI updates before calling this
+   * method (removing the result from the list immediately for better UX).
+   */
+  async function skipResult(taskId: string, username: string) {
+    try {
+      await downloadsApi.skipResult(taskId, username);
+    } catch(e) {
+      showError('Failed to skip source');
+      throw e;
+    }
+  }
+
+  async function retrySearchForTask(taskId: string, query?: string) {
+    selectionLoading.value = true;
+
+    try {
+      await downloadsApi.retrySearch(taskId, query);
+      showSuccess('Search started', 'Searching for new results...');
+      closeSelectionModal();
+
+      await fetchActive();
+    } catch(e) {
+      showError('Failed to start search');
+      throw e;
+    } finally {
+      selectionLoading.value = false;
+    }
+  }
+
+  async function autoSelectForTask(taskId: string) {
+    selectionLoading.value = true;
+
+    try {
+      await downloadsApi.autoSelect(taskId);
+      showSuccess('Download queued', 'Auto-selected best source');
+      closeSelectionModal();
+
+      await Promise.all([fetchActive(), fetchStats()]);
+    } catch(e) {
+      showError('Failed to auto-select');
+      throw e;
+    } finally {
+      selectionLoading.value = false;
+    }
   }
 
   return {
@@ -219,6 +301,10 @@ export const useDownloadsStore = defineStore('downloads', () => {
     error,
     filters,
 
+    selectedTaskId,
+    selectionModalVisible,
+    selectionLoading,
+
     hasMoreCompleted,
     hasMoreFailed,
 
@@ -232,5 +318,12 @@ export const useDownloadsStore = defineStore('downloads', () => {
     loadMoreCompleted,
     loadMoreFailed,
     reset,
+
+    openSelectionModal,
+    closeSelectionModal,
+    selectResult,
+    skipResult,
+    retrySearchForTask,
+    autoSelectForTask,
   };
 });

@@ -20,6 +20,7 @@ interface Props {
 
 interface Emits {
   (e: 'delete', ids: string[]): void;
+  (e: 'select', download: ActiveDownload): void;
 }
 
 defineProps<Props>();
@@ -29,14 +30,23 @@ const selectedDownloads = ref<ActiveDownload[]>([]);
 
 const getStatusSeverity = (status: string) => {
   const severityMap: Record<string, 'success' | 'info' | 'warning' | 'danger' | 'secondary' | 'contrast' | undefined> = {
-    downloading: 'success',
-    searching:   'info',
-    queued:      'warning',
-    deferred:    'contrast',
-    pending:     'secondary',
+    downloading:       'success',
+    searching:         'info',
+    queued:            'warning',
+    deferred:          'contrast',
+    pending:           'secondary',
+    pending_selection: 'warning',
   };
 
   return severityMap[status] || 'secondary';
+};
+
+const getStatusLabel = (status: string) => {
+  if (status === 'pending_selection') {
+    return 'Select Source';
+  }
+
+  return status;
 };
 
 const handleDelete = () => {
@@ -47,6 +57,33 @@ const handleDelete = () => {
     selectedDownloads.value = [];
   }
 };
+
+const handleSelect = (download: ActiveDownload) => {
+  emit('select', download);
+};
+
+function formatTimeRemaining(expiresAt: string | null | undefined): string | null {
+  if (!expiresAt) {
+    return null;
+  }
+
+  const now = new Date();
+  const expires = new Date(expiresAt);
+  const diff = expires.getTime() - now.getTime();
+
+  if (diff <= 0) {
+    return 'Expired';
+  }
+
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (hours > 0) {
+    return `${ hours }h ${ minutes }m`;
+  }
+
+  return `${ minutes }m`;
+}
 </script>
 
 <template>
@@ -90,7 +127,12 @@ const handleDelete = () => {
 
       <Column field="status" header="Status" sortable>
         <template #body="{ data }">
-          <Tag :value="data.status" :severity="getStatusSeverity(data.status)" />
+          <div class="status-cell">
+            <Tag :value="getStatusLabel(data.status)" :severity="getStatusSeverity(data.status)" />
+            <span v-if="data.status === 'pending_selection' && data.selectionExpiresAt" class="expires-in">
+              {{ formatTimeRemaining(data.selectionExpiresAt) }}
+            </span>
+          </div>
         </template>
       </Column>
 
@@ -122,13 +164,23 @@ const handleDelete = () => {
 
       <Column header="Actions">
         <template #body="{ data }">
-          <Button
-            icon="pi pi-trash"
-            severity="danger"
-            size="small"
-            outlined
-            @click="emit('delete', [data.id])"
-          />
+          <div class="actions-cell">
+            <Button
+              v-if="data.status === 'pending_selection'"
+              icon="pi pi-list"
+              severity="info"
+              size="small"
+              v-tooltip.top="'Select download source'"
+              @click="handleSelect(data)"
+            />
+            <Button
+              icon="pi pi-trash"
+              severity="danger"
+              size="small"
+              outlined
+              @click="emit('delete', [data.id])"
+            />
+          </div>
         </template>
       </Column>
     </DataTable>
@@ -138,5 +190,21 @@ const handleDelete = () => {
 <style scoped>
 .active-downloads-list {
   width: 100%;
+}
+
+.status-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.expires-in {
+  font-size: 0.75rem;
+  color: var(--surface-400);
+}
+
+.actions-cell {
+  display: flex;
+  gap: 0.5rem;
 }
 </style>

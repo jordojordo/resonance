@@ -18,6 +18,10 @@ export function useDownloads() {
   const error = computed(() => store.error);
   const filters = computed(() => store.filters);
 
+  const selectedTaskId = computed(() => store.selectedTaskId);
+  const selectionModalVisible = computed(() => store.selectionModalVisible);
+  const selectionLoading = computed(() => store.selectionLoading);
+
   const hasMoreCompleted = computed(() => store.hasMoreCompleted);
   const hasMoreFailed = computed(() => store.hasMoreFailed);
 
@@ -61,6 +65,30 @@ export function useDownloads() {
     store.reset();
   }
 
+  function openSelectionModal(taskId: string) {
+    store.openSelectionModal(taskId);
+  }
+
+  function closeSelectionModal() {
+    store.closeSelectionModal();
+  }
+
+  async function selectResult(taskId: string, username: string, directory?: string) {
+    return store.selectResult(taskId, username, directory);
+  }
+
+  async function skipResult(taskId: string, username: string) {
+    return store.skipResult(taskId, username);
+  }
+
+  async function retrySearchForTask(taskId: string, query?: string) {
+    return store.retrySearchForTask(taskId, query);
+  }
+
+  async function autoSelectForTask(taskId: string) {
+    return store.autoSelectForTask(taskId);
+  }
+
   return {
     activeDownloads,
     activeTotal,
@@ -73,6 +101,10 @@ export function useDownloads() {
     loading,
     error,
     filters,
+
+    selectedTaskId,
+    selectionModalVisible,
+    selectionLoading,
 
     hasMoreCompleted,
     hasMoreFailed,
@@ -87,5 +119,12 @@ export function useDownloads() {
     loadMoreCompleted,
     loadMoreFailed,
     reset,
+
+    openSelectionModal,
+    closeSelectionModal,
+    selectResult,
+    skipResult,
+    retrySearchForTask,
+    autoSelectForTask,
   };
 }

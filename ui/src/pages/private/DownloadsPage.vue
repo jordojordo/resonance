@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { ActiveDownload } from '@/types';
+
 import { onMounted } from 'vue';
 import { useDownloads } from '@/composables/useDownloads';
 import { useDownloadsSocket } from '@/composables/useDownloadsSocket';
@@ -17,6 +19,7 @@ import ErrorMessage from '@/components/common/ErrorMessage.vue';
 import ActiveDownloadsList from '@/components/downloads/ActiveDownloadsList.vue';
 import CompletedDownloadsList from '@/components/downloads/CompletedDownloadsList.vue';
 import FailedDownloadsList from '@/components/downloads/FailedDownloadsList.vue';
+import SearchResultsModal from '@/components/downloads/SearchResultsModal.vue';
 
 /*
   TODO: Add "Queued" downloads tab, will require a new API endpoint.
@@ -35,6 +38,15 @@ const {
   fetchStats,
   retryFailed,
   deleteDownloads,
+  selectedTaskId,
+  selectionModalVisible,
+  selectionLoading,
+  openSelectionModal,
+  closeSelectionModal,
+  selectResult,
+  skipResult,
+  retrySearchForTask,
+  autoSelectForTask,
 } = useDownloads();
 
 useDownloadsSocket();
@@ -73,6 +85,26 @@ const handleTriggerDownloader = async() => {
   } catch {
     // Error is already handled in the store
   }
+};
+
+const handleSelectDownload = (download: ActiveDownload) => {
+  openSelectionModal(download.id);
+};
+
+const handleModalSelect = async(taskId: string, username: string, directory?: string) => {
+  await selectResult(taskId, username, directory);
+};
+
+const handleModalSkip = async(taskId: string, username: string) => {
+  await skipResult(taskId, username);
+};
+
+const handleModalRetrySearch = async(taskId: string, query?: string) => {
+  await retrySearchForTask(taskId, query);
+};
+
+const handleModalAutoSelect = async(taskId: string) => {
+  await autoSelectForTask(taskId);
 };
 
 onMounted(() => {
@@ -126,6 +158,7 @@ onMounted(() => {
             :downloads="activeDownloads"
             :loading="loading"
             @delete="handleDelete"
+            @select="handleSelectDownload"
           />
         </TabPanel>
 
@@ -147,6 +180,17 @@ onMounted(() => {
         </TabPanel>
       </TabPanels>
     </Tabs>
+
+    <SearchResultsModal
+      :visible="selectionModalVisible"
+      :task-id="selectedTaskId"
+      :loading="selectionLoading"
+      @update:visible="closeSelectionModal"
+      @select="handleModalSelect"
+      @skip="handleModalSkip"
+      @retry-search="handleModalRetrySearch"
+      @auto-select="handleModalAutoSelect"
+    />
   </div>
 </template>
 

@@ -5,6 +5,7 @@ import type {
   DownloadStats,
   DownloadFilters,
   PaginatedResponse,
+  SearchResultsResponse,
 } from '@/types';
 
 import client from './api';
@@ -74,4 +75,29 @@ export async function deleteDownloads(request: DeleteRequest): Promise<{ success
     success: response.data.count,
     failed:  0,
   };
+}
+
+export async function getSearchResults(taskId: string): Promise<SearchResultsResponse> {
+  const response = await client.get<SearchResultsResponse>(`/downloads/${ taskId }/search-results`);
+
+  return response.data;
+}
+
+export async function selectResult(taskId: string, username: string, directory?: string): Promise<void> {
+  await client.post(`/downloads/${ taskId }/select`, {
+    username,
+    directory,
+  });
+}
+
+export async function skipResult(taskId: string, username: string): Promise<void> {
+  await client.post(`/downloads/${ taskId }/skip`, { username });
+}
+
+export async function retrySearch(taskId: string, query?: string): Promise<void> {
+  await client.post(`/downloads/${ taskId }/retry-search`, { query });
+}
+
+export async function autoSelect(taskId: string): Promise<void> {
+  await client.post(`/downloads/${ taskId }/auto-select`);
 }

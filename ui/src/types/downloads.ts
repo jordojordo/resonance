@@ -1,4 +1,4 @@
-export type DownloadStatus = 'pending' | 'searching' | 'queued' | 'downloading' | 'deferred' | 'completed' | 'failed';
+export type DownloadStatus = 'pending' | 'searching' | 'pending_selection' | 'queued' | 'downloading' | 'deferred' | 'completed' | 'failed';
 
 export type QualityTier = 'lossless' | 'high' | 'standard' | 'low' | 'unknown';
 
@@ -20,19 +20,21 @@ export interface DownloadProgress {
 }
 
 export interface ActiveDownload {
-  id:             string;
-  wishlistKey:    string;
-  artist:         string;
-  album:          string;
-  type:           'album' | 'track';
-  status:         DownloadStatus;
-  slskdUsername:  string | null;
-  slskdDirectory: string | null;
-  fileCount:      number | null;
-  quality:        QualityInfo | null;
-  progress:       DownloadProgress | null;
-  queuedAt:       string;
-  startedAt:      string | null;
+  id:                  string;
+  wishlistKey:         string;
+  artist:              string;
+  album:               string;
+  type:                'album' | 'track';
+  status:              DownloadStatus;
+  slskdUsername:       string | null;
+  slskdDirectory:      string | null;
+  fileCount:           number | null;
+  quality:             QualityInfo | null;
+  progress:            DownloadProgress | null;
+  searchQuery?:        string | null;
+  selectionExpiresAt?: string | null;
+  queuedAt:            string;
+  startedAt:           string | null;
 }
 
 export interface CompletedDownload {
@@ -70,4 +72,48 @@ export interface DownloadStats {
 export interface DownloadFilters {
   limit:  number;
   offset: number;
+}
+
+export interface SlskdFile {
+  filename:    string;
+  size?:       number;
+  bitRate?:    number;
+  bitDepth?:   number;
+  sampleRate?: number;
+  length?:     number;
+}
+
+export interface SlskdSearchResponse {
+  username:           string;
+  files:              SlskdFile[];
+  hasFreeUploadSlot?: boolean;
+  uploadSpeed?:       number;
+}
+
+export interface DirectoryGroup {
+  path:        string;
+  files:       SlskdFile[];
+  totalSize:   number;
+  qualityInfo: QualityInfo | null;
+}
+
+export interface ScoredSearchResponse {
+  response:       SlskdSearchResponse;
+  score:          number;
+  musicFileCount: number;
+  totalSize:      number;
+  qualityInfo:    QualityInfo | null;
+  directories:    DirectoryGroup[];
+}
+
+export interface SearchResultsResponse {
+  task: {
+    id:                 string;
+    artist:             string;
+    album:              string;
+    searchQuery:        string;
+    selectionExpiresAt: string | null;
+  };
+  results:          ScoredSearchResponse[];
+  skippedUsernames: string[];
 }

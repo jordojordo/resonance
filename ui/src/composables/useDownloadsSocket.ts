@@ -4,6 +4,8 @@ import type {
   DownloadTaskUpdatedEvent,
   DownloadProgressEvent,
   DownloadStatsUpdatedEvent,
+  DownloadPendingSelectionEvent,
+  DownloadSelectionExpiredEvent,
 } from '@/types/socket';
 
 import { onMounted, onUnmounted } from 'vue';
@@ -70,6 +72,29 @@ export function useDownloadsSocket() {
     store.stats = event;
   }
 
+  function handlePendingSelection(event: DownloadPendingSelectionEvent) {
+    const download = store.activeDownloads.find((d) => d.id === event.id);
+
+    if (download) {
+      download.status = 'pending_selection';
+      download.selectionExpiresAt = event.selectionExpiresAt;
+    } else {
+      // Task not in list yet, refresh active downloads
+      store.fetchActive();
+    }
+  }
+
+  function handleSelectionExpired(event: DownloadSelectionExpiredEvent) {
+    const index = store.activeDownloads.findIndex((d) => d.id === event.id);
+
+    if (index !== -1) {
+      // Remove from active list and refresh failed list
+      store.activeDownloads.splice(index, 1);
+      store.activeTotal = Math.max(0, store.activeTotal - 1);
+      store.fetchFailed();
+    }
+  }
+
   onMounted(() => {
     socket = connect();
 
@@ -77,6 +102,8 @@ export function useDownloadsSocket() {
     socket.on('download:task:updated', handleTaskUpdated);
     socket.on('download:progress', handleProgress);
     socket.on('download:stats:updated', handleStatsUpdated);
+    socket.on('download:pending_selection', handlePendingSelection);
+    socket.on('download:selection_expired', handleSelectionExpired);
   });
 
   onUnmounted(() => {
@@ -85,6 +112,8 @@ export function useDownloadsSocket() {
       socket.off('download:task:updated', handleTaskUpdated);
       socket.off('download:progress', handleProgress);
       socket.off('download:stats:updated', handleStatsUpdated);
+      socket.off('download:pending_selection', handlePendingSelection);
+      socket.off('download:selection_expired', handleSelectionExpired);
     }
 
     disconnect();
