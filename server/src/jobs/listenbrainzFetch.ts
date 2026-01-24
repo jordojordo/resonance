@@ -12,6 +12,23 @@ import ProcessedRecording from '@server/models/ProcessedRecording';
 import { isJobCancelled } from '@server/plugins/jobs';
 
 /**
+ * Context passed to processing helper functions
+ */
+interface ProcessingContext {
+  mbClient:     MusicBrainzClient;
+  coverClient:  CoverArtArchiveClient;
+  queueService: QueueService;
+  approvalMode: string;
+}
+
+/**
+ * Result from processing a single recording
+ */
+interface ProcessingResult {
+  added: boolean;
+}
+
+/**
  * ListenBrainz Fetch Job
  *
  * Fetches track recommendations from ListenBrainz and processes them:
@@ -51,6 +68,9 @@ export async function listenbrainzFetchJob(): Promise<void> {
   );
 
   const lbClient = new ListenBrainzClient();
+  const mbClient = new MusicBrainzClient();
+  const coverClient = new CoverArtArchiveClient();
+  const queueService = new QueueService();
 
   // Check for cancellation before starting
   if (isJobCancelled(JOB_NAMES.LB_FETCH)) {
@@ -76,7 +96,12 @@ export async function listenbrainzFetchJob(): Promise<void> {
   logger.info(`Got ${ recs.length } track recommendations`);
 
   // Process recordings through shared logic
-  const addedCount = await processRecordings(recs, mode, approvalMode, minScorePercent);
+  const addedCount = await processRecordings(recs, mode, minScorePercent, {
+    mbClient,
+    coverClient,
+    queueService,
+    approvalMode,
+  });
 
   logger.info(`Added ${ addedCount } new items from ListenBrainz`);
 }
@@ -158,38 +183,31 @@ function extractPlaylistMbid(identifier: string): string | null {
 }
 
 /**
- * Process recordings and add to queue
+ * Process all recommendations, delegating to mode-specific handlers
  */
 async function processRecordings(
   recs: ListenBrainzRecommendation[],
   mode: string,
-  approvalMode: string,
-  minScorePercent: number
+  minScorePercent: number,
+  ctx: ProcessingContext
 ): Promise<number> {
-  const mbClient = new MusicBrainzClient();
-  const coverClient = new CoverArtArchiveClient();
-  const queueService = new QueueService();
-
   let addedCount = 0;
-  const seenAlbums = new Set<string>(); // For album mode de-duplication within this run
+  const seenAlbums = new Set<string>();
 
   for (const rec of recs) {
-    // Check for cancellation at each iteration
     if (isJobCancelled(JOB_NAMES.LB_FETCH)) {
       logger.info('Job cancelled during processing');
       throw new Error('Job cancelled');
     }
 
     const mbid = rec.recording_mbid;
-    const score = rec.score;
-    const scorePercent = normalizeToPercent(score);
+    const scorePercent = normalizeToPercent(rec.score);
 
     if (scorePercent !== undefined && scorePercent < minScorePercent) {
       continue;
     }
 
     try {
-      // Check if we've already processed this recording
       const alreadyProcessed = await ProcessedRecording.findOne({ where: { mbid, source: 'listenbrainz' } });
 
       if (alreadyProcessed) {
@@ -199,127 +217,146 @@ async function processRecordings(
       // Rate limit: MusicBrainz requests (1 request/second)
       await sleep(1000);
 
-      if (mode === 'track') {
-        // Track mode: resolve recording to track
-        const trackInfo = await mbClient.resolveRecording(mbid);
+      const result = mode === 'track'
+        ? await processTrackMode(mbid, scorePercent, ctx)
+        : await processAlbumMode(mbid, scorePercent, seenAlbums, ctx);
 
-        if (!trackInfo) {
-          continue;
-        }
-
-        // Get cover art URL if we have a release-group MBID
-        const coverUrl = trackInfo.releaseGroupMbid ? coverClient.getCoverUrl(trackInfo.releaseGroupMbid) : null;
-
-        // Add to queue
-        if (approvalMode === 'manual') {
-          // Check if already in pending queue
-          const isPending = await queueService.isPending(mbid);
-
-          if (isPending) {
-            continue;
-          }
-
-          await queueService.addPending({
-            artist:   trackInfo.artist,
-            title:    trackInfo.title,
-            mbid:     trackInfo.mbid,
-            type:     'track',
-            score:    scorePercent,
-            source:   'listenbrainz',
-            coverUrl: coverUrl || undefined,
-          });
-
-          logger.info(`  ? ${ trackInfo.artist } - ${ trackInfo.title } (pending approval)`);
-        } else {
-          // Auto mode: add directly to wishlist
-          // TODO: Direct wishlist support will be added in Phase 3
-          logger.info(`  + ${ trackInfo.artist } - ${ trackInfo.title }`);
-        }
-
-        // Mark as processed
-        await ProcessedRecording.create({
-          mbid,
-          source:      'listenbrainz',
-          processedAt: new Date(),
-        });
-
-        addedCount++;
-      } else {
-        // Album mode: resolve recording to album
-        const albumInfo = await mbClient.resolveRecordingToAlbum(mbid);
-
-        if (!albumInfo) {
-          continue;
-        }
-
-        const albumMbid = albumInfo.mbid;
-
-        // Skip if we've already seen this album in this run
-        if (seenAlbums.has(albumMbid)) {
-          continue;
-        }
-        seenAlbums.add(albumMbid);
-
-        // Check if we've already processed this album
-        const alreadyProcessedAlbum = await ProcessedRecording.findOne({ where: { mbid: albumMbid, source: 'listenbrainz' } });
-
-        if (alreadyProcessedAlbum) {
-          continue;
-        }
-
-        // Check if rejected
-        const isRejected = await queueService.isRejected(albumMbid);
-
-        if (isRejected) {
-          continue;
-        }
-
-        // Check if already in pending queue
-        const isPending = await queueService.isPending(albumMbid);
-
-        if (isPending) {
-          continue;
-        }
-
-        // Get cover art URL
-        const coverUrl = coverClient.getCoverUrl(albumMbid);
-
-        // Add to queue
-        if (approvalMode === 'manual') {
-          await queueService.addPending({
-            artist:      albumInfo.artist,
-            album:       albumInfo.title,
-            mbid:        albumMbid,
-            type:        'album',
-            score:       scorePercent,
-            source:      'listenbrainz',
-            sourceTrack: albumInfo.trackTitle,
-            coverUrl:    coverUrl || undefined,
-            year:        albumInfo.year,
-          });
-
-          logger.info(`  ? ${ albumInfo.artist } - ${ albumInfo.title } (pending approval)`);
-        } else {
-          // Auto mode: add directly to wishlist
-          // TODO: Direct wishlist support
-          logger.info(`  + ${ albumInfo.artist } - ${ albumInfo.title }`);
-        }
-
-        // Mark recording as processed (so we don't reprocess the same tracks from this album)
-        await ProcessedRecording.create({
-          mbid:        albumMbid,
-          source:      'listenbrainz',
-          processedAt: new Date(),
-        });
-
+      if (result.added) {
         addedCount++;
       }
-    } catch(error) {
+    } catch (error) {
       logger.error(`Error processing recommendation ${ mbid }:`, { error });
     }
   }
 
   return addedCount;
+}
+
+/**
+ * Process a recording in track mode - adds tracks directly to queue
+ */
+async function processTrackMode(
+  mbid: string,
+  scorePercent: number | undefined,
+  ctx: ProcessingContext
+): Promise<ProcessingResult> {
+  const trackInfo = await ctx.mbClient.resolveRecording(mbid);
+
+  if (!trackInfo) {
+    return { added: false };
+  }
+
+  const coverUrl = trackInfo.releaseGroupMbid
+    ? ctx.coverClient.getCoverUrl(trackInfo.releaseGroupMbid)
+    : null;
+
+  if (ctx.approvalMode === 'manual') {
+    const isPending = await ctx.queueService.isPending(mbid);
+
+    if (isPending) {
+      return { added: false };
+    }
+
+    await ctx.queueService.addPending({
+      artist:   trackInfo.artist,
+      title:    trackInfo.title,
+      mbid:     trackInfo.mbid,
+      type:     'track',
+      score:    scorePercent,
+      source:   'listenbrainz',
+      coverUrl: coverUrl || undefined,
+    });
+
+    logger.info(`  ? ${ trackInfo.artist } - ${ trackInfo.title } (pending approval)`);
+  } else {
+    // Auto mode: add directly to wishlist
+    // TODO: Direct wishlist support will be added in Phase 3
+    logger.info(`  + ${ trackInfo.artist } - ${ trackInfo.title }`);
+  }
+
+  await ProcessedRecording.create({
+    mbid,
+    source:      'listenbrainz',
+    processedAt: new Date(),
+  });
+
+  return { added: true };
+}
+
+/**
+ * Process a recording in album mode - resolves to parent album for de-duplication
+ */
+async function processAlbumMode(
+  mbid: string,
+  scorePercent: number | undefined,
+  seenAlbums: Set<string>,
+  ctx: ProcessingContext
+): Promise<ProcessingResult> {
+  const albumInfo = await ctx.mbClient.resolveRecordingToAlbum(mbid);
+
+  if (!albumInfo) {
+    return { added: false };
+  }
+
+  const albumMbid = albumInfo.mbid;
+
+  // Skip if we've already seen this album in this run
+  if (seenAlbums.has(albumMbid)) {
+    return { added: false };
+  }
+  seenAlbums.add(albumMbid);
+
+  // Check if we've already processed this album
+  const alreadyProcessed = await ProcessedRecording.findOne({
+    where: { mbid: albumMbid, source: 'listenbrainz' }
+  });
+
+  if (alreadyProcessed) {
+    return { added: false };
+  }
+
+  // Check if rejected or already pending
+  const isRejected = await ctx.queueService.isRejected(albumMbid);
+
+  if (isRejected) {
+    return { added: false };
+  }
+
+  const isPending = await ctx.queueService.isPending(albumMbid);
+
+  if (isPending) {
+    return { added: false };
+  }
+
+  const coverUrl = ctx.coverClient.getCoverUrl(albumMbid);
+
+  if (ctx.approvalMode === 'manual') {
+    await ctx.queueService.addPending({
+      artist:      albumInfo.artist,
+      album:       albumInfo.title,
+      mbid:        albumMbid,
+      type:        'album',
+      score:       scorePercent,
+      source:      'listenbrainz',
+      sourceTrack: albumInfo.trackTitle,
+      coverUrl:    coverUrl || undefined,
+      year:        albumInfo.year,
+    });
+
+    logger.info(`  ? ${ albumInfo.artist } - ${ albumInfo.title } (pending approval)`);
+  } else {
+    // Auto mode: add directly to wishlist
+    // TODO: Direct wishlist support
+    logger.info(`  + ${ albumInfo.artist } - ${ albumInfo.title }`);
+  }
+
+  await ProcessedRecording.create({
+    mbid:        albumMbid,
+    source:      'listenbrainz',
+    processedAt: new Date(),
+  });
+
+  return { added: true };
 }
 
 /**
