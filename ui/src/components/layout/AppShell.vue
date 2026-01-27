@@ -8,6 +8,7 @@ import {
 import { useRoute } from 'vue-router';
 
 import SidebarNavList from '@/components/layout/SidebarNavList.vue';
+import { useSettings } from '@/composables/useSettings';
 
 export interface SidebarItem {
   key:       string;
@@ -28,10 +29,16 @@ const props = defineProps<{
 
 const slots = useSlots();
 const route = useRoute();
+const { uiPreferences, saveUIPreferences } = useSettings();
 
 const mobileSidebarOpen = ref(false);
-const sidebarCollapsed = ref(false);
+const sidebarCollapsed = ref(uiPreferences.value.sidebarCollapsed);
 const expandedItems = ref<Set<string>>(new Set());
+
+// Persist sidebar collapsed state to preferences
+watch(sidebarCollapsed, (collapsed) => {
+  saveUIPreferences({ sidebarCollapsed: collapsed });
+});
 
 const hasSidebarBottomSlot = computed(() => !!slots['sidebar-bottom']);
 const hasSidebarHeaderSlot = computed(() => !!slots['sidebar-header']);
