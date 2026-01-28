@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { useAuthStore } from '@/stores/auth';
 import { useSidebarItems } from '@/composables/useSidebarItems';
+import { useToast } from '@/composables/useToast';
 import { ROUTE_PATHS } from '@/constants/routes';
+import { setToastCallback } from '@/services/api';
 
 import Button from 'primevue/button';
 import Toast from 'primevue/toast';
@@ -15,11 +17,17 @@ import PreviewPlayer from '@/components/player/PreviewPlayer.vue';
 
 const authStore = useAuthStore();
 const router = useRouter();
+const { showError } = useToast();
 
 const { sidebarTopItems, sidebarBottomItems } = useSidebarItems();
 
 const isAuthed = computed(() => authStore.isAuthenticated);
 const requiresLogin = computed(() => authStore.requiresLogin);
+
+// Register toast callback for API client to show error messages
+onMounted(() => {
+  setToastCallback(showError);
+});
 
 function handleLogout(): void {
   authStore.logout();

@@ -3,6 +3,7 @@ import QueueItem, { QueueItemSource } from '@server/models/QueueItem';
 import WishlistService from './WishlistService';
 import LibraryService from './LibraryService';
 import { getConfig } from '@server/config/settings';
+import { withDbWrite } from '@server/config/db';
 import logger from '@server/config/logger';
 import {
   emitQueueItemAdded,
@@ -92,21 +93,23 @@ export class QueueService {
       return 0;
     }
 
-    // Update status to approved
-    await QueueItem.update(
-      {
-        status:      'approved',
-        processedAt: new Date(),
-      },
-      {
-        where: {
-          mbid:   { [Op.in]: mbids },
-          status: 'pending',
+    // Update status to approved (wrapped in mutex)
+    await withDbWrite(async() => {
+      await QueueItem.update(
+        {
+          status:      'approved',
+          processedAt: new Date(),
         },
-      }
-    );
+        {
+          where: {
+            mbid:   { [Op.in]: mbids },
+            status: 'pending',
+          },
+        }
+      );
+    });
 
-    // Add to wishlist
+    // Build wishlist items
     const wishlistItems = items.map(item => ({
       artist:   item.artist,
       album:    item.album,
@@ -118,6 +121,7 @@ export class QueueService {
       coverUrl: item.coverUrl,
     }));
 
+    // Add to wishlist (processApproved manages its own mutex per item)
     await this.wishlistService.processApproved(wishlistItems);
 
     logger.info(`Approved ${ items.length } items`);
@@ -166,18 +170,22 @@ export class QueueService {
 
     const processedAt = new Date();
 
-    const [affectedCount] = await QueueItem.update(
-      {
-        status: 'rejected',
-        processedAt,
-      },
-      {
-        where: {
-          mbid:   { [Op.in]: mbids },
-          status: 'pending',
+    const affectedCount = await withDbWrite(async() => {
+      const [count] = await QueueItem.update(
+        {
+          status: 'rejected',
+          processedAt,
         },
-      }
-    );
+        {
+          where: {
+            mbid:   { [Op.in]: mbids },
+            status: 'pending',
+          },
+        }
+      );
+
+      return count;
+    });
 
     logger.info(`Rejected ${ affectedCount } items`);
 
@@ -252,25 +260,25 @@ export class QueueService {
 
     // Auto-reject if configured and item is in library
     if (autoReject && inLibrary) {
-      const queueItem = await QueueItem.create({
+      const queueItem = await withDbWrite(() => QueueItem.create({
         ...item,
         inLibrary,
         status:      'rejected',
         addedAt:     new Date(),
         processedAt: new Date(),
-      });
+      }));
 
       logger.info(`Auto-rejected duplicate: ${ item.artist } - ${ item.album || item.title }`);
 
       return queueItem;
     }
 
-    const queueItem = await QueueItem.create({
+    const queueItem = await withDbWrite(() => QueueItem.create({
       ...item,
       inLibrary: inLibrary ?? false,
       status:    'pending',
       addedAt:   new Date(),
-    });
+    }));
 
     logger.info(`Added to pending queue: ${ item.artist } - ${ item.album || item.title }${ inLibrary ? ' (in library)' : '' }`);
 

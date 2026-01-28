@@ -2,6 +2,7 @@ import { Op } from '@sequelize/core';
 import logger from '@server/config/logger';
 import { JOB_NAMES } from '@server/constants/jobs';
 import { getConfig } from '@server/config/settings';
+import { withDbWrite } from '@server/config/db';
 import { NavidromeClient } from '@server/services/clients/NavidromeClient';
 import { LastFmClient } from '@server/services/clients/LastFmClient';
 import { MusicBrainzClient } from '@server/services/clients/MusicBrainzClient';
@@ -77,12 +78,12 @@ export async function catalogDiscoveryJob(): Promise<void> {
     for (const [nameLower, artist] of Object.entries(libraryArtists)) {
       libraryArtistNames.add(nameLower);
 
-      await CatalogArtist.upsert({
+      await withDbWrite(() => CatalogArtist.upsert({
         navidromeId:  artist.id,
         name:         artist.name,
         nameLower,
         lastSyncedAt: new Date(),
-      });
+      }));
     }
 
     logger.info(`Synced ${ libraryArtistNames.size } library artists`);
@@ -250,10 +251,10 @@ export async function catalogDiscoveryJob(): Promise<void> {
       }
 
       // Mark artist as discovered
-      await DiscoveredArtist.create({
+      await withDbWrite(() => DiscoveredArtist.create({
         nameLower:    artist.nameLower,
         discoveredAt: new Date(),
-      });
+      }));
     }
 
     logger.info(`Catalog discovery completed: added ${ addedCount } albums from ${ candidateArtists.length } artists`);

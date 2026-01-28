@@ -18,6 +18,11 @@ export {
   WishlistItem,
 };
 
+// Export mutex utilities for serializing write operations
+export {
+  dbWriteMutex, withDbWrite, DB_WRITE_TIMEOUT_MS 
+} from './mutex';
+
 // Models don't have any associations for now
 // (they are independent tables tracking different aspects of the discovery pipeline)
 

@@ -1,7 +1,76 @@
 import type { Response } from 'express';
+import type { ErrorResponse } from '@server/types/responses';
+
+import { E_TIMEOUT } from 'async-mutex';
 
 import logger from '@server/config/logger';
-import type { ErrorResponse } from '@server/types/responses';
+
+/**
+ * Custom error for database busy/locked conditions.
+ */
+export class DatabaseBusyError extends Error {
+  constructor(message = 'Database is busy. Please try again.') {
+    super(message);
+    this.name = 'DatabaseBusyError';
+  }
+}
+
+/**
+ * Check if an error is a SQLite busy/locked error.
+ *
+ * Detects SQLITE_BUSY, SQLITE_LOCKED errors, async-mutex timeout errors,
+ * and Sequelize TimeoutError wrapping SQLite busy conditions.
+ */
+export function isDatabaseBusyError(error: unknown): boolean {
+  if (error instanceof DatabaseBusyError) {
+    return true;
+  }
+
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  // async-mutex timeout (singleton comparison)
+  if (error === E_TIMEOUT) {
+    return true;
+  }
+
+  // Sequelize TimeoutError wrapping SQLITE_BUSY
+  if (error.name === 'TimeoutError') {
+    return true;
+  }
+
+  // Direct SQLite message (in case the error isn't wrapped)
+  if (error.message === 'database is locked') {
+    return true;
+  }
+
+  // Check cause.code for raw SqliteError reaching us unwrapped
+  const cause = (error as { cause?: { code?: string } }).cause;
+
+  if (cause?.code === 'SQLITE_BUSY' || cause?.code === 'SQLITE_LOCKED') {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Send database busy error response (503 Service Unavailable).
+ */
+export function sendDatabaseBusyError(
+  res: Response,
+  message = 'Database is busy. Please try again later.'
+): Response {
+  const errorResponse: ErrorResponse = {
+    error:   true,
+    code:    'database_busy',
+    message,
+    details: {},
+  };
+
+  return res.status(503).json(errorResponse);
+}
 
 /**
  * Handle errors and send appropriate response
@@ -12,6 +81,11 @@ export function handleError(
   defaultMessage = 'An unexpected error occurred.'
 ): Response {
   logger.error(`Error: ${ error.message }`, { stack: error.stack });
+
+  // Check for database busy errors first
+  if (isDatabaseBusyError(error)) {
+    return sendDatabaseBusyError(res);
+  }
 
   const errorResponse: ErrorResponse = {
     error:   true,

@@ -4,6 +4,7 @@ import type { ListenBrainzSettings } from '@server/config/settings';
 import logger from '@server/config/logger';
 import { JOB_NAMES } from '@server/constants/jobs';
 import { getConfig } from '@server/config/settings';
+import { withDbWrite } from '@server/config/db';
 import { ListenBrainzClient } from '@server/services/clients/ListenBrainzClient';
 import { MusicBrainzClient } from '@server/services/clients/MusicBrainzClient';
 import { CoverArtArchiveClient } from '@server/services/clients/CoverArtArchiveClient';
@@ -270,11 +271,11 @@ async function processTrackMode(
     logger.info(`  + ${ trackInfo.artist } - ${ trackInfo.title }`);
   }
 
-  await ProcessedRecording.create({
+  await withDbWrite(() => ProcessedRecording.create({
     mbid,
     source:      'listenbrainz',
     processedAt: new Date(),
-  });
+  }));
 
   return { added: true };
 }
@@ -344,11 +345,11 @@ async function processAlbumMode(
     logger.info(`  + ${ albumInfo.artist } - ${ albumInfo.title }`);
   }
 
-  await ProcessedRecording.create({
+  await withDbWrite(() => ProcessedRecording.create({
     mbid:        albumMbid,
     source:      'listenbrainz',
     processedAt: new Date(),
-  });
+  }));
 
   return { added: true };
 }

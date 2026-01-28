@@ -1,7 +1,56 @@
+import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
+
 import axios from 'axios';
 import { ROUTE_PATHS } from '@/constants/routes';
 
 let redirectingToLogin = false;
+
+/**
+ * Retry configuration for database busy errors
+ */
+const MAX_RETRIES = 3;
+const RETRY_DELAYS = [500, 1000, 2000]; // exponential backoff in ms
+
+/**
+ * Toast callback for showing error messages from outside Vue components.
+ * Set by calling setToastCallback from App.vue.
+ */
+let showErrorToast: ((message: string, detail?: string) => void) | null = null;
+
+/**
+ * Register the toast callback for showing errors from the API client.
+ * Call this from App.vue after the toast is available.
+ */
+export function setToastCallback(callback: (message: string, detail?: string) => void): void {
+  showErrorToast = callback;
+}
+
+/**
+ * Extended request config with retry tracking
+ */
+interface RetryConfig extends InternalAxiosRequestConfig {
+  _retryCount?: number;
+}
+
+/**
+ * Check if error is a database busy error (503 with database_busy code)
+ */
+function isDatabaseBusyError(error: AxiosError): boolean {
+  if (error.response?.status !== 503) {
+    return false;
+  }
+
+  const data = error.response.data as { code?: string } | undefined;
+
+  return data?.code === 'database_busy';
+}
+
+/**
+ * Sleep helper for retry delays
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api/v1',
@@ -46,10 +95,13 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor to handle 401 (redirect to login)
+// Response interceptor to handle 401 (redirect to login) and 503 (database busy with retry)
 client.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async(error: AxiosError) => {
+    const config = error.config as RetryConfig | undefined;
+
+    // Handle 401 - redirect to login
     if (error.response?.status === 401) {
       const authMode = getAuthMode();
 
@@ -63,6 +115,29 @@ client.interceptors.response.use(
           redirectingToLogin = true;
           window.location.replace(ROUTE_PATHS.LOGIN);
         }
+      }
+
+      return Promise.reject(error);
+    }
+
+    // Handle 503 database_busy - retry with exponential backoff
+    if (isDatabaseBusyError(error) && config) {
+      const retryCount = config._retryCount || 0;
+
+      if (retryCount < MAX_RETRIES) {
+        config._retryCount = retryCount + 1;
+        const delay = RETRY_DELAYS[retryCount] ?? RETRY_DELAYS[RETRY_DELAYS.length - 1] ?? 1000;
+
+        // Wait before retrying
+        await sleep(delay);
+
+        // Retry the request
+        return client.request(config);
+      }
+
+      // All retries exhausted - show toast and reject
+      if (showErrorToast) {
+        showErrorToast('Database Busy', `The database is busy after ${ MAX_RETRIES } retries. Please try again later.`);
       }
     }
 

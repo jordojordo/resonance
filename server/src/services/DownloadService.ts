@@ -10,6 +10,7 @@ import { Op } from '@sequelize/core';
 import logger from '@server/config/logger';
 import { JOB_INTERVALS } from '@server/config/jobs';
 import { getConfig } from '@server/config/settings';
+import { withDbWrite } from '@server/config/db';
 import { JOB_NAMES } from '@server/constants/jobs';
 import DownloadTask, { DownloadTaskType, DownloadTaskStatus } from '@server/models/DownloadTask';
 import {
@@ -344,13 +345,13 @@ export class DownloadService {
       if ((task.slskdDirectory === null || task.slskdDirectory === undefined) && userTransfers.directories.length === 1) {
         const fallbackDirectory = normalizeSlskdPath(userTransfers.directories[0].directory);
 
-        await DownloadTask.update(
+        await withDbWrite(() => DownloadTask.update(
           {
             slskdDirectory: fallbackDirectory ?? undefined,
             fileCount:      task.fileCount || userTransfers.directories[0].files.length,
           },
           { where: { id: task.id } }
-        );
+        ));
 
         task.slskdDirectory = fallbackDirectory ?? undefined;
       }
@@ -550,7 +551,7 @@ export class DownloadService {
         });
 
         // Then reset task status to pending and link to the new/existing wishlist item
-        await task.update({
+        await withDbWrite(() => task.update({
           status:          'pending',
           wishlistItemId:  wishlistItem.id,
           errorMessage:    undefined,
@@ -563,7 +564,7 @@ export class DownloadService {
           fileCount:       undefined,
           startedAt:       undefined,
           completedAt:     undefined,
-        });
+        }));
 
         successCount++;
         logger.info(`Retry queued: ${ task.wishlistKey } (attempt ${ task.retryCount + 1 })`);
@@ -629,7 +630,7 @@ export class DownloadService {
           logger.info(`Cancelled ${ task.slskdFileIds.length } slskd transfers for: ${ task.wishlistKey }`);
         }
 
-        await task.destroy();
+        await withDbWrite(() => task.destroy());
 
         // Remove from wishlist to prevent re-processing
         await this.wishlistService.remove(task.artist, task.album);
@@ -708,7 +709,7 @@ export class DownloadService {
     album:       string;
     type:        DownloadTaskType;
   }): Promise<DownloadTask> {
-    const task = await DownloadTask.create({
+    const task = await withDbWrite(() => DownloadTask.create({
       wishlistKey: params.wishlistKey,
       artist:      params.artist,
       album:       params.album,
@@ -716,7 +717,7 @@ export class DownloadService {
       status:      'pending',
       retryCount:  0,
       queuedAt:    new Date(),
-    });
+    }));
 
     logger.info(`Created download task: ${ params.wishlistKey }`);
 
@@ -832,7 +833,7 @@ export class DownloadService {
       Object.assign(updateData, details);
     }
 
-    await DownloadTask.update(updateData, { where: { id } });
+    await withDbWrite(() => DownloadTask.update(updateData, { where: { id } }));
 
     // Handle completed downloads
     if (status === 'completed') {
@@ -1157,7 +1158,7 @@ export class DownloadService {
       }
     }
 
-    await task.update({
+    await withDbWrite(() => task.update({
       status:             'queued',
       slskdUsername:      username,
       slskdDirectory:     selectedDirectory,
@@ -1172,7 +1173,7 @@ export class DownloadService {
       selectionExpiresAt: undefined,
       skippedUsernames:   undefined,
       errorMessage:       undefined,
-    });
+    }));
 
     emitDownloadTaskUpdated({
       id:            task.id,
@@ -1212,7 +1213,7 @@ export class DownloadService {
       skippedUsernames.push(username);
     }
 
-    await task.update({ skippedUsernames });
+    await withDbWrite(() => task.update({ skippedUsernames }));
 
     logger.debug(`Skipped user ${ username } for task ${ task.wishlistKey }`);
 
@@ -1247,7 +1248,7 @@ export class DownloadService {
 
     const searchQuery = query || task.searchQuery || `${ task.artist } - ${ task.album }`;
 
-    await task.update({
+    await withDbWrite(() => task.update({
       status:             'searching',
       searchQuery,
       searchResults:      undefined,
@@ -1255,7 +1256,7 @@ export class DownloadService {
       skippedUsernames:   undefined,
       slskdSearchId:      undefined,
       errorMessage:       undefined,
-    });
+    }));
 
     emitDownloadTaskUpdated({
       id:     task.id,
@@ -1352,14 +1353,14 @@ export class DownloadService {
           }
         }
 
-        await task.update({
+        await withDbWrite(() => task.update({
           status:             'failed',
           errorMessage:       'Selection timeout expired',
           completedAt:        now,
           searchResults:      undefined,
           selectionExpiresAt: undefined,
           skippedUsernames:   undefined,
-        });
+        }));
 
         emitDownloadSelectionExpired({
           id:     task.id,

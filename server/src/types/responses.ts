@@ -32,6 +32,13 @@ export type ActionResponse = z.infer<typeof actionResponseSchema>;
 
 /**
  * Error response schema
+ *
+ * Error codes:
+ * - `internal_error` - Unexpected server error (500)
+ * - `validation_error` - Invalid request data (400)
+ * - `not_found` - Resource not found (404)
+ * - `unauthorized` - Authentication required (401)
+ * - `database_busy` - Database is locked/busy, client should retry (503)
  */
 export const errorResponseSchema = z.object({
   error:   z.boolean().default(true),

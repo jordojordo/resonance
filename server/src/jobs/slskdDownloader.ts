@@ -13,6 +13,7 @@ import path from 'path';
 import { Op } from '@sequelize/core';
 import logger from '@server/config/logger';
 import { getConfig, SlskdSearchSettings } from '@server/config/settings';
+import { withDbWrite } from '@server/config/db';
 import DownloadTask from '@server/models/DownloadTask';
 import WishlistItem from '@server/models/WishlistItem';
 import { DownloadService } from '@server/services/DownloadService';
@@ -142,7 +143,7 @@ export async function slskdDownloaderJob(): Promise<void> {
 
           // Backfill FK in case an older task exists without linkage.
           if (!task.wishlistItemId) {
-            await task.update({ wishlistItemId: wishlistItem.id });
+            await withDbWrite(() => task.update({ wishlistItemId: wishlistItem.id }));
           }
 
           await wishlistService.markProcessed(wishlistItem.id);
@@ -254,7 +255,7 @@ function shouldSkipTask(task: DownloadTask): boolean {
 }
 
 async function findOrCreateTask(wishlistItem: WishlistItem, wishlistKey: string): Promise<DownloadTask> {
-  const [task] = await DownloadTask.findOrCreate({
+  const [task] = await withDbWrite(() => DownloadTask.findOrCreate({
     where:    { wishlistKey },
     defaults: {
       wishlistKey,
@@ -267,7 +268,7 @@ async function findOrCreateTask(wishlistItem: WishlistItem, wishlistKey: string)
       queuedAt:       new Date(),
       year:           wishlistItem.year ?? undefined,
     },
-  });
+  }));
 
   return task;
 }
@@ -539,7 +540,7 @@ async function attemptSearch(params: {
     // Store the search results in the database (limited to reduce memory usage)
     const storedResultsLimit = Math.min(maxResponsesToEval, MAX_STORED_SELECTION_RESULTS);
 
-    await DownloadTask.update(
+    await withDbWrite(() => DownloadTask.update(
       {
         status:             'pending_selection',
         searchResults:      JSON.stringify(responses.slice(0, storedResultsLimit)),
@@ -549,7 +550,7 @@ async function attemptSearch(params: {
         errorMessage:       undefined,
       },
       { where: { id: task.id } }
-    );
+    ));
 
     // Emit WebSocket event
     const { emitDownloadPendingSelection } = await import('@server/plugins/io/namespaces/downloadsNamespace');

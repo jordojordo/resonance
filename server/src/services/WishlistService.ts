@@ -1,6 +1,7 @@
 import type { CreateWishlistItemOptions, ProcessApprovedItem } from '@server/types/wishlist';
 
 import logger from '@server/config/logger';
+import { withDbWrite } from '@server/config/db';
 import WishlistItem, { WishlistItemSource, WishlistItemType } from '@server/models/WishlistItem';
 
 /**
@@ -70,10 +71,10 @@ export class WishlistService {
    * Mark a wishlist item as processed (download task created)
    */
   async markProcessed(id: string): Promise<void> {
-    await WishlistItem.update(
+    await withDbWrite(() => WishlistItem.update(
       { processedAt: new Date() },
       { where: { id } }
-    );
+    ));
     logger.debug(`Marked wishlist item ${ id } as processed`);
   }
 
@@ -86,29 +87,31 @@ export class WishlistService {
       artist, album, type, year, mbid, source, coverUrl
     } = options;
 
-    // Check for existing item with same artist/album/type
-    const existing = await this.findByArtistAlbum(artist, album, type);
+    return withDbWrite(async() => {
+      // Check inside mutex to prevent race between read and write
+      const existing = await this.findByArtistAlbum(artist, album, type);
 
-    if (existing) {
-      logger.debug(`Wishlist item already exists: ${ artist } - ${ album }`);
+      if (existing) {
+        logger.debug(`Wishlist item already exists: ${ artist } - ${ album }`);
 
-      return existing;
-    }
+        return existing;
+      }
 
-    const wishlistItem = await WishlistItem.create({
-      artist,
-      album,
-      type,
-      year,
-      mbid,
-      source:   source ?? 'manual',
-      coverUrl,
-      addedAt:  new Date(),
+      const wishlistItem = await WishlistItem.create({
+        artist,
+        album,
+        type,
+        year,
+        mbid,
+        source:  source ?? 'manual',
+        coverUrl,
+        addedAt: new Date(),
+      });
+
+      logger.info(`Added to wishlist: ${ artist } - ${ album }`);
+
+      return wishlistItem;
     });
-
-    logger.info(`Added to wishlist: ${ artist } - ${ album }`);
-
-    return wishlistItem;
   }
 
   /**
@@ -147,27 +150,34 @@ export class WishlistService {
 
       const type: WishlistItemType = isAlbum ? 'album' : 'track';
 
-      // Check for existing item
-      const existing = await this.findByArtistAlbum(artist, album, type);
+      // Check and create inside mutex to prevent race between read and write
+      const added = await withDbWrite(async() => {
+        const existing = await this.findByArtistAlbum(artist, album, type);
 
-      if (existing) {
-        logger.debug(`Wishlist item already exists: ${ artist } - ${ album }`);
-        continue;
-      }
+        if (existing) {
+          logger.debug(`Wishlist item already exists: ${ artist } - ${ album }`);
 
-      await WishlistItem.create({
-        artist,
-        album,
-        type,
-        year:     item.year,
-        mbid:     item.mbid,
-        source:   (item.source as WishlistItemSource) ?? 'manual',
-        coverUrl: item.coverUrl,
-        addedAt:  new Date(),
+          return false;
+        }
+
+        await WishlistItem.create({
+          artist,
+          album,
+          type,
+          year:     item.year,
+          mbid:     item.mbid,
+          source:   (item.source as WishlistItemSource) ?? 'manual',
+          coverUrl: item.coverUrl,
+          addedAt:  new Date(),
+        });
+
+        return true;
       });
 
-      count++;
-      logger.info(`Added to wishlist: ${ artist } - ${ album }`);
+      if (added) {
+        count++;
+        logger.info(`Added to wishlist: ${ artist } - ${ album }`);
+      }
     }
 
     return count;
@@ -192,12 +202,12 @@ export class WishlistService {
    * Returns true if entry was found and removed.
    */
   async remove(artist: string, album: string): Promise<boolean> {
-    const deleted = await WishlistItem.destroy({
+    const deleted = await withDbWrite(() => WishlistItem.destroy({
       where: {
         artist,
         album,
       },
-    });
+    }));
 
     if (deleted > 0) {
       logger.info(`Removed from wishlist: ${ artist } - ${ album }`);
@@ -219,7 +229,7 @@ export class WishlistService {
       return false;
     }
 
-    await item.destroy();
+    await withDbWrite(() => item.destroy());
     logger.info(`Removed from wishlist: ${ item.artist } - ${ item.album }`);
 
     return true;
