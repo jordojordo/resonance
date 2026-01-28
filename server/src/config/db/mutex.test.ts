@@ -1,6 +1,7 @@
 import {
-  describe, it, expect, vi, beforeEach 
+  describe, it, expect, vi, beforeEach
 } from 'vitest';
+import { E_TIMEOUT } from 'async-mutex';
 import { dbWriteMutex, withDbWrite, DB_WRITE_TIMEOUT_MS } from './mutex';
 
 describe('Database Mutex', () => {
@@ -63,6 +64,18 @@ describe('Database Mutex', () => {
 
       expect(result).toBe('success');
     });
+
+    it('should throw E_TIMEOUT when lock cannot be acquired within timeout', async() => {
+      // Hold the lock for longer than the timeout
+      const release = await dbWriteMutex.acquire();
+
+      try {
+        await expect(withDbWrite(async() => 'should not run'))
+          .rejects.toBe(E_TIMEOUT);
+      } finally {
+        release();
+      }
+    }, DB_WRITE_TIMEOUT_MS + 2000);
   });
 
   describe('constants', () => {

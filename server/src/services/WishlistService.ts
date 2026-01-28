@@ -87,29 +87,31 @@ export class WishlistService {
       artist, album, type, year, mbid, source, coverUrl
     } = options;
 
-    // Check for existing item with same artist/album/type
-    const existing = await this.findByArtistAlbum(artist, album, type);
+    return withDbWrite(async() => {
+      // Check inside mutex to prevent race between read and write
+      const existing = await this.findByArtistAlbum(artist, album, type);
 
-    if (existing) {
-      logger.debug(`Wishlist item already exists: ${ artist } - ${ album }`);
+      if (existing) {
+        logger.debug(`Wishlist item already exists: ${ artist } - ${ album }`);
 
-      return existing;
-    }
+        return existing;
+      }
 
-    const wishlistItem = await withDbWrite(() => WishlistItem.create({
-      artist,
-      album,
-      type,
-      year,
-      mbid,
-      source:   source ?? 'manual',
-      coverUrl,
-      addedAt:  new Date(),
-    }));
+      const wishlistItem = await WishlistItem.create({
+        artist,
+        album,
+        type,
+        year,
+        mbid,
+        source:  source ?? 'manual',
+        coverUrl,
+        addedAt: new Date(),
+      });
 
-    logger.info(`Added to wishlist: ${ artist } - ${ album }`);
+      logger.info(`Added to wishlist: ${ artist } - ${ album }`);
 
-    return wishlistItem;
+      return wishlistItem;
+    });
   }
 
   /**
@@ -148,27 +150,34 @@ export class WishlistService {
 
       const type: WishlistItemType = isAlbum ? 'album' : 'track';
 
-      // Check for existing item
-      const existing = await this.findByArtistAlbum(artist, album, type);
+      // Check and create inside mutex to prevent race between read and write
+      const added = await withDbWrite(async() => {
+        const existing = await this.findByArtistAlbum(artist, album, type);
 
-      if (existing) {
-        logger.debug(`Wishlist item already exists: ${ artist } - ${ album }`);
-        continue;
+        if (existing) {
+          logger.debug(`Wishlist item already exists: ${ artist } - ${ album }`);
+
+          return false;
+        }
+
+        await WishlistItem.create({
+          artist,
+          album,
+          type,
+          year:     item.year,
+          mbid:     item.mbid,
+          source:   (item.source as WishlistItemSource) ?? 'manual',
+          coverUrl: item.coverUrl,
+          addedAt:  new Date(),
+        });
+
+        return true;
+      });
+
+      if (added) {
+        count++;
+        logger.info(`Added to wishlist: ${ artist } - ${ album }`);
       }
-
-      await withDbWrite(() => WishlistItem.create({
-        artist,
-        album,
-        type,
-        year:     item.year,
-        mbid:     item.mbid,
-        source:   (item.source as WishlistItemSource) ?? 'manual',
-        coverUrl: item.coverUrl,
-        addedAt:  new Date(),
-      }));
-
-      count++;
-      logger.info(`Added to wishlist: ${ artist } - ${ album }`);
     }
 
     return count;

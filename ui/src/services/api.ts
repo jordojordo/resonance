@@ -137,7 +137,7 @@ client.interceptors.response.use(
 
       // All retries exhausted - show toast and reject
       if (showErrorToast) {
-        showErrorToast('Database Busy', 'The database is busy. Please try again later.');
+        showErrorToast('Database Busy', `The database is busy after ${ MAX_RETRIES } retries. Please try again later.`);
       }
     }
 

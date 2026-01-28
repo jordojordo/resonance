@@ -107,21 +107,22 @@ export class QueueService {
           },
         }
       );
-
-      // Add to wishlist
-      const wishlistItems = items.map(item => ({
-        artist:   item.artist,
-        album:    item.album,
-        title:    item.title,
-        type:     item.type,
-        year:     item.year,
-        mbid:     item.mbid,
-        source:   item.source,
-        coverUrl: item.coverUrl,
-      }));
-
-      await this.wishlistService.processApproved(wishlistItems);
     });
+
+    // Build wishlist items
+    const wishlistItems = items.map(item => ({
+      artist:   item.artist,
+      album:    item.album,
+      title:    item.title,
+      type:     item.type,
+      year:     item.year,
+      mbid:     item.mbid,
+      source:   item.source,
+      coverUrl: item.coverUrl,
+    }));
+
+    // Add to wishlist (processApproved manages its own mutex per item)
+    await this.wishlistService.processApproved(wishlistItems);
 
     logger.info(`Approved ${ items.length } items`);
 
