@@ -29,16 +29,11 @@ const props = defineProps<{
 
 const slots = useSlots();
 const route = useRoute();
-const { uiPreferences, saveUIPreferences } = useSettings();
+const { uiPreferences } = useSettings();
 
 const mobileSidebarOpen = ref(false);
 const sidebarCollapsed = ref(uiPreferences.value.sidebarCollapsed);
 const expandedItems = ref<Set<string>>(new Set());
-
-// Persist sidebar collapsed state to preferences
-watch(sidebarCollapsed, (collapsed) => {
-  saveUIPreferences({ sidebarCollapsed: collapsed });
-});
 
 const hasSidebarBottomSlot = computed(() => !!slots['sidebar-bottom']);
 const hasSidebarHeaderSlot = computed(() => !!slots['sidebar-header']);
