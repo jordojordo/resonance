@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { QueueItem } from '@/types/queue';
 
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 import Button from 'primevue/button';
 import Tag from 'primevue/tag';
@@ -10,15 +10,31 @@ import { getDefaultCoverUrl } from '@/utils/formatters';
 interface Props {
   item:        QueueItem;
   processing?: boolean;
+  focused?:    boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), { processing: false });
+const props = withDefaults(defineProps<Props>(), {
+  processing: false,
+  focused:    false,
+});
 
 const emit = defineEmits<{
   approve: [mbid: string];
   reject:  [mbid: string];
   preview: [item: QueueItem];
 }>();
+
+const cardRef = ref<HTMLElement | null>(null);
+
+// Scroll focused card into view
+watch(
+  () => props.focused,
+  (isFocused) => {
+    if (isFocused && cardRef.value) {
+      cardRef.value.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+);
 
 const displayTitle = computed(() => props.item.album || props.item.title || 'Unknown');
 
@@ -86,10 +102,26 @@ const handleReject = () => {
 const handlePreview = () => {
   emit('preview', props.item);
 };
+
+const handleCardClick = (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+
+  // Don't trigger preview if clicking on a button or inside the actions area
+  if (target.closest('button') || target.closest('.queue-card__actions')) {
+    return;
+  }
+
+  emit('preview', props.item);
+};
 </script>
 
 <template>
-  <div class="queue-card group">
+  <div
+    ref="cardRef"
+    class="queue-card group"
+    :class="{ 'queue-card--focused': focused }"
+    @click="handleCardClick"
+  >
     <div class="queue-card__cover">
       <img
         :src="item.cover_url || getDefaultCoverUrl()"
@@ -181,6 +213,15 @@ const handlePreview = () => {
   border-color: rgba(43, 43, 238, 0.5);
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5),
               0 0 15px rgba(43, 43, 238, 0.1);
+}
+
+.queue-card--focused {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 2px var(--primary-500);
+}
+
+.queue-card--focused .queue-card__overlay {
+  opacity: 1;
 }
 
 /* Cover Section */

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { QueueItem } from '@/types/queue';
+
+import { ref, watch } from 'vue';
+
 import QueueItemCard from './QueueItemCard.vue';
 import ProgressSpinner from 'primevue/progressspinner';
 import EmptyState from '@/components/common/EmptyState.vue';
@@ -8,18 +11,28 @@ interface Props {
   items:         QueueItem[];
   loading?:      boolean;
   isProcessing?: (mbid: string) => boolean;
+  focusIndex?:   number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading:      false,
   isProcessing: () => false,
+  focusIndex:   -1,
 });
 
 const emit = defineEmits<{
-  approve: [mbids: string[]];
-  reject:  [mbids: string[]];
-  preview: [item: QueueItem];
+  approve:              [mbids: string[]];
+  reject:               [mbids: string[]];
+  preview:              [item: QueueItem];
+  'update:focus-index': [index: number];
+  'container-ref':      [el: HTMLElement | null];
 }>();
+
+const gridItemsRef = ref<HTMLElement | null>(null);
+
+watch(gridItemsRef, (el) => {
+  emit('container-ref', el);
+}, { immediate: true });
 
 const handleApprove = (mbid: string) => {
   emit('approve', [mbid]);
@@ -31,6 +44,10 @@ const handleReject = (mbid: string) => {
 
 const handlePreview = (item: QueueItem) => {
   emit('preview', item);
+};
+
+const handleCardClick = (index: number) => {
+  emit('update:focus-index', index);
 };
 </script>
 
@@ -47,15 +64,17 @@ const handlePreview = (item: QueueItem) => {
       message="New music recommendations will appear here when discovered"
     />
 
-    <div v-else class="queue-grid__items">
+    <div v-else ref="gridItemsRef" class="queue-grid__items">
       <QueueItemCard
-        v-for="item in items"
+        v-for="(item, index) in items"
         :key="item.mbid"
         :item="item"
         :processing="props.isProcessing(item.mbid)"
+        :focused="index === props.focusIndex"
         @approve="handleApprove"
         @reject="handleReject"
         @preview="handlePreview"
+        @click="handleCardClick(index)"
       />
     </div>
   </div>

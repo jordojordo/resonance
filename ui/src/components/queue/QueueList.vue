@@ -1,22 +1,66 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import type { QueueItem } from '@/types';
+import type { ComponentPublicInstance } from 'vue';
+
+import { ref, watch } from 'vue';
+import { getDefaultCoverUrl } from '@/utils/formatters';
+
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Tag from 'primevue/tag';
 import ProgressSpinner from 'primevue/progressspinner';
-import type { QueueItem } from '@/types';
-import { getDefaultCoverUrl } from '@/utils/formatters';
 
-defineProps<{
-  items:   QueueItem[] | undefined;
-  loading: boolean;
-}>();
+interface Props {
+  items:       QueueItem[] | undefined;
+  loading:     boolean;
+  focusIndex?: number;
+}
+
+const props = withDefaults(defineProps<Props>(), { focusIndex: -1 });
 
 const emit = defineEmits<{
-  approve: [mbids: string[]];
-  reject:  [mbids: string[]];
+  approve:              [mbids: string[]];
+  reject:               [mbids: string[]];
+  preview:              [item: QueueItem];
+  'update:focus-index': [index: number];
 }>();
+
+const tableRef = ref<ComponentPublicInstance | null>(null);
+
+// Scroll focused row into view
+watch(
+  () => props.focusIndex,
+  (index) => {
+    if (index >= 0 && tableRef.value) {
+      const table = tableRef.value.$el as HTMLElement;
+      const rows = table.querySelectorAll('tbody tr');
+      const row = rows[index] as HTMLElement | undefined;
+
+      if (row) {
+        row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }
+);
+
+function getRowClass(data: QueueItem): string | undefined {
+  if (!props.items) {
+    return undefined;
+  }
+
+  const index = props.items.findIndex(item => item.mbid === data.mbid);
+
+  return index === props.focusIndex ? 'queue-list__row--focused' : undefined;
+}
+
+function handleRowClick(event: { data: QueueItem; index: number }) {
+  emit('update:focus-index', event.index);
+}
+
+function handlePreview(item: QueueItem) {
+  emit('preview', item);
+}
 
 const selectedItems = ref<QueueItem[]>([]);
 
@@ -114,12 +158,15 @@ function getSimilarTooltip(similarTo: string[] | undefined): string | null {
 
     <DataTable
       v-else
+      ref="tableRef"
       :value="items"
       v-model:selection="selectedItems"
       data-key="mbid"
       :loading="loading"
       striped-rows
       responsive-layout="scroll"
+      :row-class="getRowClass"
+      @row-click="handleRowClick"
     >
       <Column selection-mode="multiple" header-style="width: 3rem"></Column>
 
@@ -180,6 +227,22 @@ function getSimilarTooltip(similarTo: string[] | undefined): string | null {
         </template>
       </Column>
 
+      <Column header="Preview" style="width: 80px">
+        <template #body="{ data }">
+          <div class="flex justify-content-center align-items-center">
+            <Button
+              icon="pi pi-play"
+              size="small"
+              severity="info"
+              rounded
+              outlined
+              aria-label="Preview"
+              @click.stop="handlePreview(data)"
+            />
+          </div>
+        </template>
+      </Column>
+
       <Column header="Actions" style="width: auto">
         <template #body="{ data }">
           <div class="flex gap-2">
@@ -187,14 +250,14 @@ function getSimilarTooltip(similarTo: string[] | undefined): string | null {
               icon="pi pi-check"
               severity="success"
               size="small"
-              @click="approveItem(data)"
+              @click.stop="approveItem(data)"
             />
             <Button
               icon="pi pi-times"
               severity="danger"
               size="small"
               outlined
-              @click="rejectItem(data)"
+              @click.stop="rejectItem(data)"
             />
           </div>
         </template>
@@ -206,3 +269,15 @@ function getSimilarTooltip(similarTo: string[] | undefined): string | null {
     </div>
   </div>
 </template>
+
+<style scoped>
+:deep(.queue-list__row--focused) {
+  background-color: rgba(var(--primary-500-rgb, 99, 102, 241), 0.15) !important;
+  outline: 2px solid var(--primary-500);
+  outline-offset: -2px;
+}
+
+:deep(.queue-list__row--focused td) {
+  background-color: transparent !important;
+}
+</style>

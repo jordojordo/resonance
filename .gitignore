@@ -55,3 +55,4 @@ htmlcov/
 .analysis
 .claude/
 workspace/
+.playwright-mcp/

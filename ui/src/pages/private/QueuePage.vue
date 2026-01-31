@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import type { QueueItem } from '@/types';
 import type { ViewMode } from '@/components/queue/QueueFilters.vue';
+import type { NavigationDirection } from '@/composables/useKeyboardShortcuts';
 
-import { onMounted, ref, watch, computed } from 'vue';
+import {
+  onMounted, onUnmounted, ref, watch, computed
+} from 'vue';
 import { useQueue } from '@/composables/useQueue';
 import { useQueueSocket } from '@/composables/useQueueSocket';
 import { useToast } from '@/composables/useToast';
@@ -36,38 +39,147 @@ const {
 useQueueSocket();
 
 const { showWarning } = useToast();
-const { playQueueItem } = usePlayer();
-const { uiPreferences, saveUIPreferences } = useSettings();
+const { playQueueItem, currentTrack, togglePlay } = usePlayer();
+const { uiPreferences } = useSettings();
 
 const viewMode = ref<ViewMode>(uiPreferences.value.queueViewMode);
-const selectedIndex = ref(0);
+const focusIndex = ref(-1);
+const gridColumns = ref(1);
+const gridContainerRef = ref<HTMLElement | null>(null);
 
-// Persist view mode preference
-watch(viewMode, (mode) => {
-  saveUIPreferences({ queueViewMode: mode });
+watch(viewMode, () => {
+  focusIndex.value = items.value.length > 0 ? 0 : -1;
 });
 
-const selectedItem = computed(() => items.value[selectedIndex.value] ?? null);
+const focusedItem = computed(() => {
+  if (focusIndex.value < 0) {
+    return null;
+  }
+
+  return items.value[focusIndex.value] || null;
+});
+
+function handleNavigate(direction: NavigationDirection) {
+  if (items.value.length === 0) {
+    return;
+  }
+
+  if (focusIndex.value < 0) {
+    focusIndex.value = 0;
+
+    return;
+  }
+
+  const cols = viewMode.value === 'grid' ? gridColumns.value : 0;
+  const offsets: Record<NavigationDirection, number> = {
+    left:  cols ? -1 : 0,
+    right: cols ? 1 : 0,
+    up:    cols ? -cols : -1,
+    down:  cols ? cols : 1,
+  };
+
+  const offset = offsets[direction];
+  const newIndex = focusIndex.value + offset;
+
+  focusIndex.value = Math.max(0, Math.min(items.value.length - 1, newIndex));
+}
+
+
+function handleTogglePreview() {
+  if (!focusedItem.value) {
+    return;
+  }
+
+  // If this item is already playing, toggle play/pause
+  if (currentTrack.value?.id === focusedItem.value.mbid) {
+    togglePlay();
+  } else {
+    playQueueItem(focusedItem.value);
+  }
+}
+
+function handleClearFocus() {
+  focusIndex.value = -1;
+}
+
+function updateFocusIndex(index: number) {
+  focusIndex.value = index;
+}
 
 const { isHelpOpen, closeHelp, shortcuts } = useKeyboardShortcuts({
   onApprove: () => {
-    if (selectedItem.value) {
-      handleApprove([selectedItem.value.mbid]);
+    if (focusedItem.value) {
+      handleApprove([focusedItem.value.mbid]);
     } else {
-      showWarning('No item selected', 'Select an item first to approve');
+      showWarning('No item focused', 'Use arrow keys to focus an item first');
     }
   },
   onReject: () => {
-    if (selectedItem.value) {
-      handleReject([selectedItem.value.mbid]);
+    if (focusedItem.value) {
+      handleReject([focusedItem.value.mbid]);
     } else {
-      showWarning('No item selected', 'Select an item first to reject');
+      showWarning('No item focused', 'Use arrow keys to focus an item first');
     }
   },
+  onNavigate:      handleNavigate,
+  onTogglePreview: handleTogglePreview,
+  onClearFocus:    handleClearFocus,
 });
+
+// Track grid columns via ResizeObserver
+let resizeObserver: ResizeObserver | null = null;
+
+function updateGridColumns() {
+  if (viewMode.value !== 'grid') {
+    return;
+  }
+
+  // Use viewport width to match CSS media query breakpoints
+  const width = window.innerWidth;
+
+  // Match breakpoints from QueueGrid.vue CSS
+  if (width >= 1280) {
+    gridColumns.value = 4;
+  } else if (width >= 1024) {
+    gridColumns.value = 3;
+  } else if (width >= 640) {
+    gridColumns.value = 2;
+  } else {
+    gridColumns.value = 1;
+  }
+}
+
+function setGridContainerRef(el: HTMLElement | null) {
+  // Skip if same element
+  if (el === gridContainerRef.value) {
+    return;
+  }
+
+  // Clean up old observer when element changes
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
+
+  gridContainerRef.value = el;
+
+  // Set up new observer for the new element
+  if (el) {
+    resizeObserver = new ResizeObserver(updateGridColumns);
+    resizeObserver.observe(el);
+    updateGridColumns();
+  }
+}
 
 onMounted(() => {
   fetchPending();
+});
+
+onUnmounted(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
 });
 
 watch(
@@ -78,12 +190,12 @@ watch(
   }
 );
 
-// Reset selected index when items change
+// Reset focus index when items change
 watch(
   () => items.value.length,
-  () => {
-    if (selectedIndex.value >= items.value.length) {
-      selectedIndex.value = Math.max(0, items.value.length - 1);
+  (newLength) => {
+    if (focusIndex.value >= newLength) {
+      focusIndex.value = Math.max(-1, newLength - 1);
     }
   }
 );
@@ -148,17 +260,23 @@ function handlePreview(item: QueueItem) {
         :items="items"
         :loading="loading"
         :is-processing="isProcessing"
+        :focus-index="focusIndex"
         @approve="handleApprove"
         @reject="handleReject"
         @preview="handlePreview"
+        @update:focus-index="updateFocusIndex"
+        @container-ref="setGridContainerRef"
       />
 
       <QueueList
         v-else
         :items="items"
         :loading="loading"
+        :focus-index="focusIndex"
         @approve="handleApprove"
         @reject="handleReject"
+        @preview="handlePreview"
+        @update:focus-index="updateFocusIndex"
       />
     </div>
 

@@ -1,8 +1,13 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 
+export type NavigationDirection = 'up' | 'down' | 'left' | 'right';
+
 export interface KeyboardShortcutsConfig {
-  onApprove?: () => void;
-  onReject?:  () => void;
+  onApprove?:       () => void;
+  onReject?:        () => void;
+  onNavigate?:      (direction: NavigationDirection) => void;
+  onTogglePreview?: () => void;
+  onClearFocus?:    () => void;
 }
 
 export interface ShortcutDefinition {
@@ -11,10 +16,12 @@ export interface ShortcutDefinition {
 }
 
 export const QUEUE_SHORTCUTS: ShortcutDefinition[] = [
-  { key: 'a', description: 'Approve selected item' },
-  { key: 'r', description: 'Reject selected item' },
+  { key: '↑ ↓ ← →', description: 'Navigate between items' },
+  { key: 'Space', description: 'Play/pause preview' },
+  { key: 'a', description: 'Approve focused item' },
+  { key: 'r', description: 'Reject focused item' },
   { key: '?', description: 'Show keyboard shortcuts' },
-  { key: 'Esc', description: 'Clear selection' },
+  { key: 'Esc', description: 'Close help / clear focus' },
 ];
 
 export function useKeyboardShortcuts(config: KeyboardShortcutsConfig = {}) {
@@ -45,7 +52,7 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig = {}) {
       return;
     }
 
-    switch (event.key.toLowerCase()) {
+    switch (event.key) {
       case 'a':
         event.preventDefault();
         config.onApprove?.();
@@ -61,13 +68,40 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig = {}) {
         isHelpOpen.value = true;
         break;
 
-      case 'escape':
+      case 'Escape':
         event.preventDefault();
 
         if (isHelpOpen.value) {
           isHelpOpen.value = false;
+        } else {
+          config.onClearFocus?.();
         }
 
+        break;
+
+      case 'ArrowUp':
+        event.preventDefault();
+        config.onNavigate?.('up');
+        break;
+
+      case 'ArrowDown':
+        event.preventDefault();
+        config.onNavigate?.('down');
+        break;
+
+      case 'ArrowLeft':
+        event.preventDefault();
+        config.onNavigate?.('left');
+        break;
+
+      case 'ArrowRight':
+        event.preventDefault();
+        config.onNavigate?.('right');
+        break;
+
+      case ' ':
+        event.preventDefault();
+        config.onTogglePreview?.();
         break;
     }
   }
