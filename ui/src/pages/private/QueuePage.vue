@@ -142,7 +142,7 @@ function updateGridColumns() {
     gridColumns.value = 4;
   } else if (width >= 1024) {
     gridColumns.value = 3;
-  } else if (width >= 640) {
+  } else if (width >= 520) {
     gridColumns.value = 2;
   } else {
     gridColumns.value = 1;
