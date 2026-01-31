@@ -99,7 +99,7 @@ const handleCardClick = (index: number) => {
   gap: 1.5rem;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 520px) {
   .queue-grid__items {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

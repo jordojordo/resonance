@@ -273,6 +273,7 @@ watch(
 
     &.sidebar-collapsed {
       align-items: center;
+      padding: 1rem 0.5rem;
     }
   }
 
@@ -555,6 +556,10 @@ watch(
   .shell {
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(0, 1fr);
+
+    &:has(.shell__sidebar.sidebar-collapsed) {
+      grid-template-columns: 1fr;
+    }
     grid-template-areas:
       "header"
       "main";

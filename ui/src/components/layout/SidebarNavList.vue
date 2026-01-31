@@ -5,12 +5,16 @@ import { RouterLink } from 'vue-router';
 
 import IconShell from '@/components/common/IconShell.vue';
 
-defineProps<{
+const props = defineProps<{
   items:            SidebarItem[];
   sidebarCollapsed: boolean;
   isItemExpanded:   (itemKey: string) => boolean;
   toggleExpanded:   (itemKey: string) => void;
 }>();
+
+function getTooltip(label: string) {
+  return props.sidebarCollapsed ? { value: label, showDelay: 300 } : undefined;
+}
 </script>
 
 <template>
@@ -29,10 +33,10 @@ defineProps<{
             custom
           >
             <a
+              v-tooltip.right="getTooltip(item.label)"
               :href="href"
               class="shell__sidebar-link has-children"
-              :class="{ 'is-active': isExactActive }"
-              :title="sidebarCollapsed ? item.label : undefined"
+              :class="{ 'is-active': isExactActive, 'collapsed': sidebarCollapsed }"
               @click="navigate"
             >
               <IconShell
@@ -40,7 +44,7 @@ defineProps<{
                 :icon="item.icon"
                 class="shell__sidebar-link-icon"
               />
-              <span class="shell__sidebar-link-label">
+              <span class="shell__sidebar-link-label" :class="{ 'collapsed': sidebarCollapsed }">
                 {{ item.label }}
               </span>
             </a>
@@ -103,10 +107,10 @@ defineProps<{
         custom
       >
         <a
+          v-tooltip.right="getTooltip(item.label)"
           :href="href"
           class="shell__sidebar-link"
-          :class="{ 'is-active': isExactActive }"
-          :title="sidebarCollapsed ? item.label : undefined"
+          :class="{ 'is-active': isExactActive, 'collapsed': sidebarCollapsed }"
           @click="navigate"
         >
           <IconShell
@@ -114,7 +118,7 @@ defineProps<{
             :icon="item.icon"
             class="shell__sidebar-link-icon"
           />
-          <span class="shell__sidebar-link-label">
+          <span class="shell__sidebar-link-label" :class="{ 'collapsed': sidebarCollapsed }">
             {{ item.label }}
           </span>
           <span
@@ -197,7 +201,7 @@ defineProps<{
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
   text-decoration: none;
-  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, gap 0.3s ease;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, gap 0.3s ease, padding 0.3s ease;
   cursor: pointer;
   position: relative;
 
@@ -209,6 +213,12 @@ defineProps<{
     padding: 0.375rem 0.75rem;
     font-size: 0.9rem;
   }
+
+  &.collapsed {
+    gap: 0;
+    justify-content: center;
+    padding: 0.5rem;
+  }
 }
 
 .shell__sidebar-link-icon {
@@ -219,7 +229,13 @@ defineProps<{
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, width 0.2s ease;
+
+  &.collapsed {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+  }
 }
 
 .shell__sidebar-link.is-active {
