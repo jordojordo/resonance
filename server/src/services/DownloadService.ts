@@ -564,7 +564,7 @@ export class DownloadService {
             album:   task.album,
             type:    task.type,
             year:    task.year,
-            source:  'retry',
+            source:  'manual',
             addedAt: new Date(),
           });
 
