@@ -443,12 +443,13 @@ watch(
     padding: 0.5rem 0.75rem;
     border-radius: 0.5rem;
     text-decoration: none;
-    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, gap 0.3s ease;
+    color: inherit;
+    transition: background-color 0.2s ease-in-out, gap 0.3s ease;
     cursor: pointer;
     position: relative;
 
-    &:visited, &:active, &:focus {
-      color: unset;
+    &:link, &:visited, &:active, &:focus {
+      color: inherit;
     }
 
     .sidebar-collapsed & {
