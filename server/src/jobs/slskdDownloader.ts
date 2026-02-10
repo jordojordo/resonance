@@ -33,7 +33,7 @@ import {
   MB_TO_BYTES,
   MUSIC_EXTENSIONS,
   QUALITY_SCORES,
-  DEFAULT_PREFERRED_FORMATS,
+
   MAX_STORED_SELECTION_RESULTS,
 } from '@server/constants/slskd';
 import {
@@ -42,6 +42,7 @@ import {
   shouldRejectFile,
   getDominantQualityInfo,
 } from '@server/utils/audioQuality';
+import { buildQualityPreferences } from '@server/services/downloads/qualityPrefsBuilder';
 
 /**
  * Build SearchConfig from configuration settings.
@@ -75,15 +76,8 @@ function buildSearchConfig(
     maxRetryAttempts:     s?.retry?.max_attempts ?? 3,
     simplifyOnRetry:      s?.retry?.simplify_on_retry ?? true,
     retryDelayMs:         s?.retry?.delay_between_retries_ms ?? 5000,
-    qualityPreferences:   qp ? {
-      enabled:          qp.enabled ?? true,
-      preferredFormats: qp.preferred_formats ?? [...DEFAULT_PREFERRED_FORMATS],
-      minBitrate:       qp.min_bitrate ?? 256,
-      preferLossless:   qp.prefer_lossless ?? true,
-      rejectLowQuality: qp.reject_low_quality ?? false,
-      rejectLossless:   qp.reject_lossless ?? false,
-    } : undefined,
-    selection: {
+    qualityPreferences:   buildQualityPreferences(qp),
+    selection:            {
       mode:         selectionSettings?.mode ?? 'auto',
       timeoutHours: selectionSettings?.timeout_hours ?? 24,
     },
