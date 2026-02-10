@@ -75,6 +75,15 @@ const form = reactive<SlskdForm>({
       reject_low_quality: false,
       reject_lossless:    false,
     },
+    completeness: {
+      enabled:                true,
+      require_complete:       false,
+      completeness_weight:    500,
+      min_completeness_ratio: 0.5,
+      file_count_cap:         200,
+      penalize_excess:        true,
+      excess_decay_rate:      2.0,
+    },
   },
   selection: { mode: 'manual', timeout_hours: 24 },
 });
@@ -525,6 +534,125 @@ function searchFallbackQueries(event: { query: string }) {
             fluid
             @complete="searchFormats"
           />
+        </div>
+      </div>
+    </details>
+
+    <details class="settings-form__section">
+      <summary class="settings-form__section-title">Completeness</summary>
+      <div class="settings-form__grid settings-form__grid--with-margin">
+        <div class="settings-form__field">
+          <label for="setting-slskd-completeness-enabled" class="settings-form__label">
+            Enabled
+          </label>
+          <ToggleSwitch
+            id="setting-slskd-completeness-enabled"
+            v-model="form.search.completeness.enabled"
+            :disabled="loading"
+          />
+          <span class="settings-form__help">
+            Score results based on track completeness using MusicBrainz/Deezer data
+          </span>
+        </div>
+
+        <div class="settings-form__field">
+          <label for="setting-slskd-completeness-weight" class="settings-form__label">
+            Score Weight
+          </label>
+          <InputNumber
+            id="setting-slskd-completeness-weight"
+            v-model="form.search.completeness.completeness_weight"
+            :disabled="loading || !form.search.completeness.enabled"
+            :min="0"
+            :max="1000"
+            :step="50"
+          />
+          <span class="settings-form__help">
+            Max score bonus for complete albums (0-1000)
+          </span>
+        </div>
+
+        <div class="settings-form__field">
+          <label for="setting-slskd-completeness-min-ratio" class="settings-form__label">
+            Min Completeness Ratio
+          </label>
+          <InputNumber
+            id="setting-slskd-completeness-min-ratio"
+            v-model="form.search.completeness.min_completeness_ratio"
+            :disabled="loading || !form.search.completeness.enabled"
+            :min="0"
+            :max="1"
+            :step="0.1"
+            :min-fraction-digits="1"
+            :max-fraction-digits="2"
+          />
+          <span class="settings-form__help">
+            Below this ratio, no completeness bonus is given
+          </span>
+        </div>
+
+        <div class="settings-form__field">
+          <label for="setting-slskd-completeness-require" class="settings-form__label">
+            Require Complete
+          </label>
+          <ToggleSwitch
+            id="setting-slskd-completeness-require"
+            v-model="form.search.completeness.require_complete"
+            :disabled="loading || !form.search.completeness.enabled"
+          />
+          <span class="settings-form__help">
+            Hard reject results with fewer tracks than expected
+          </span>
+        </div>
+
+        <div class="settings-form__field">
+          <label for="setting-slskd-completeness-file-count-cap" class="settings-form__label">
+            File Count Cap
+          </label>
+          <InputNumber
+            id="setting-slskd-completeness-file-count-cap"
+            v-model="form.search.completeness.file_count_cap"
+            :disabled="loading || !form.search.completeness.enabled"
+            :min="0"
+            :max="1000"
+            :step="50"
+          />
+          <span class="settings-form__help">
+            Maximum file count score points (score peaks at expected track count)
+          </span>
+        </div>
+
+        <div class="settings-form__field">
+          <label for="setting-slskd-completeness-penalize-excess" class="settings-form__label">
+            Penalize Excess Files
+          </label>
+          <ToggleSwitch
+            id="setting-slskd-completeness-penalize-excess"
+            v-model="form.search.completeness.penalize_excess"
+            :disabled="loading || !form.search.completeness.enabled"
+          />
+          <span class="settings-form__help">
+            Reduce score for results with more files than expected
+          </span>
+        </div>
+
+        <div class="settings-form__field">
+          <label for="setting-slskd-completeness-decay-rate" class="settings-form__label">
+            Excess Decay Rate
+          </label>
+          <InputNumber
+            id="setting-slskd-completeness-decay-rate"
+            v-model="form.search.completeness.excess_decay_rate"
+            :disabled="loading || !form.search.completeness.enabled || !form.search.completeness.penalize_excess"
+            :min="0"
+            :max="10"
+            :step="0.5"
+            :min-fraction-digits="1"
+            :max-fraction-digits="1"
+          />
+          <span class="settings-form__help">
+            How aggressively to penalize excess files (higher = steeper penalty)
+          </span>
         </div>
       </div>
     </details>

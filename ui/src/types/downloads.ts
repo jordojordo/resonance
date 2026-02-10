@@ -97,13 +97,25 @@ export interface DirectoryGroup {
   qualityInfo: QualityInfo | null;
 }
 
+export interface ScoreBreakdown {
+  hasSlot:           number;
+  qualityScore:      number;
+  fileCountScore:    number;
+  uploadSpeedBonus:  number;
+  completenessScore: number;
+}
+
 export interface ScoredSearchResponse {
-  response:       SlskdSearchResponse;
-  score:          number;
-  musicFileCount: number;
-  totalSize:      number;
-  qualityInfo:    QualityInfo | null;
-  directories:    DirectoryGroup[];
+  response:            SlskdSearchResponse;
+  score:               number;
+  scorePercent:        number;
+  scoreBreakdown:      ScoreBreakdown;
+  musicFileCount:      number;
+  totalSize:           number;
+  qualityInfo:         QualityInfo | null;
+  directories:         DirectoryGroup[];
+  expectedTrackCount?: number;
+  completenessRatio?:  number;
 }
 
 export interface SearchResultsResponse {

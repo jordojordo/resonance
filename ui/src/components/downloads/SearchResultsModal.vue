@@ -294,8 +294,10 @@ function handleAutoSelect() {
             <QualityBadge v-if="result.qualityInfo" :quality="result.qualityInfo" />
           </div>
           <div class="results-mobile__meta">
+            <span class="text-sm score-badge">{{ result.scorePercent }}%</span>
             <span v-if="result.response.uploadSpeed && result.response.uploadSpeed > 0" class="text-sm">{{ formatSpeed(result.response.uploadSpeed) }}</span>
-            <span class="text-sm">{{ result.musicFileCount }} files</span>
+            <span v-if="result.expectedTrackCount" class="text-sm">{{ result.musicFileCount }}/{{ result.expectedTrackCount }}</span>
+            <span v-else class="text-sm">{{ result.musicFileCount }} files</span>
             <span class="text-sm">{{ formatFileSize(result.totalSize) }}</span>
           </div>
           <div class="results-mobile__actions">
@@ -345,7 +347,15 @@ function handleAutoSelect() {
 
         <Column header="Files" sortable sortField="musicFileCount">
           <template #body="{ data }">
-            {{ data.musicFileCount }} files
+            <template v-if="data.expectedTrackCount">
+              <span :class="data.musicFileCount >= data.expectedTrackCount ? 'completeness-complete' : (data.completenessRatio != null && data.completenessRatio < 0.5 ? 'completeness-low' : 'completeness-partial')">
+                <i :class="data.musicFileCount >= data.expectedTrackCount ? 'pi pi-check-circle' : 'pi pi-exclamation-circle'" class="completeness-icon" />
+                {{ data.musicFileCount }}/{{ data.expectedTrackCount }}
+              </span>
+            </template>
+            <template v-else>
+              {{ data.musicFileCount }} files
+            </template>
           </template>
         </Column>
 
@@ -359,6 +369,12 @@ function handleAutoSelect() {
           <template #body="{ data }">
             <QualityBadge v-if="data.qualityInfo" :quality="data.qualityInfo" />
             <span v-else class="text-surface-400">-</span>
+          </template>
+        </Column>
+
+        <Column header="Score" sortable sortField="score" style="width: 5rem">
+          <template #body="{ data }">
+            <span class="score-value">{{ data.scorePercent }}%</span>
           </template>
         </Column>
 
@@ -385,6 +401,15 @@ function handleAutoSelect() {
 
         <template #expansion="{ data }">
           <div class="expansion-content">
+            <div v-if="data.scoreBreakdown" class="score-breakdown">
+              <span class="score-breakdown__label">Score breakdown ({{ Math.round(data.score) }} pts):</span>
+              <span v-if="data.scoreBreakdown.hasSlot" class="score-breakdown__item">Slot {{ data.scoreBreakdown.hasSlot }}</span>
+              <span class="score-breakdown__item">Quality {{ Math.round(data.scoreBreakdown.qualityScore) }}</span>
+              <span class="score-breakdown__item">Files {{ Math.round(data.scoreBreakdown.fileCountScore) }}</span>
+              <span v-if="data.scoreBreakdown.uploadSpeedBonus > 0" class="score-breakdown__item">Speed {{ Math.round(data.scoreBreakdown.uploadSpeedBonus) }}</span>
+              <span v-if="data.scoreBreakdown.completenessScore > 0" class="score-breakdown__item">Completeness {{ Math.round(data.scoreBreakdown.completenessScore) }}</span>
+            </div>
+
             <FileList :directories="data.directories" />
 
             <div v-if="data.directories.length > 1" class="dir-select">
@@ -553,5 +578,70 @@ function handleAutoSelect() {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
+}
+
+/* Score styles */
+.score-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--primary-300);
+}
+
+.score-badge {
+  font-variant-numeric: tabular-nums;
+  color: var(--primary-300);
+  font-weight: 600;
+}
+
+.score-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--surface-700);
+  font-size: 0.8125rem;
+}
+
+.score-breakdown__label {
+  color: var(--surface-400);
+}
+
+.score-breakdown__item {
+  color: var(--surface-300);
+  padding: 0.125rem 0.5rem;
+  background: var(--surface-800);
+  border-radius: 4px;
+  border: 1px solid var(--surface-700);
+}
+
+/* Completeness indicators */
+.completeness-icon {
+  font-size: 0.75rem;
+  margin-right: 0.25rem;
+}
+
+.completeness-complete {
+  color: var(--green-400);
+}
+
+.completeness-partial {
+  color: var(--yellow-400);
+}
+
+.completeness-low {
+  color: var(--red-400);
+}
+
+:deep(.p-button.p-component.p-button-outlined) {
+  background: rgba(43, 43, 238, 0.2);
+  border-color: rgba(43, 43, 238, 0.3);
+  color: var(--primary-500);
+}
+
+:deep(.p-button.p-component.p-button-outlined:hover) {
+  background: var(--primary-500);
+  border-color: var(--primary-500);
+  color: var(--r-text-primary);
 }
 </style>

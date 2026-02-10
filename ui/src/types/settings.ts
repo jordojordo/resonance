@@ -47,6 +47,16 @@ export interface SlskdSettings {
   selection?:       SlskdSelectionSettings;
 }
 
+export interface SlskdCompletenessSettings {
+  enabled:                boolean;
+  require_complete:       boolean;
+  completeness_weight:    number;
+  min_completeness_ratio: number;
+  file_count_cap:         number;
+  penalize_excess:        boolean;
+  excess_decay_rate:      number;
+}
+
 export interface SlskdSearchSettings {
   album_query_template:   string;
   track_query_template:   string;
@@ -58,6 +68,7 @@ export interface SlskdSearchSettings {
   prefer_album_folder:    boolean;
   retry:                  SlskdRetrySettings;
   quality_preferences?:   SlskdQualitySettings;
+  completeness?:          SlskdCompletenessSettings;
 }
 
 export interface SlskdRetrySettings {
