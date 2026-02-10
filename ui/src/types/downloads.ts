@@ -126,6 +126,7 @@ export interface SearchResultsResponse {
     searchQuery:        string;
     selectionExpiresAt: string | null;
   };
-  results:          ScoredSearchResponse[];
-  skippedUsernames: string[];
+  results:              ScoredSearchResponse[];
+  skippedUsernames:     string[];
+  minCompletenessRatio: number;
 }

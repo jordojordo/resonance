@@ -899,8 +899,9 @@ export class DownloadService {
       searchQuery:        string;
       selectionExpiresAt: Date | null;
     };
-    results:          ScoredSearchResponse[];
-    skippedUsernames: string[];
+    results:              ScoredSearchResponse[];
+    skippedUsernames:     string[];
+    minCompletenessRatio: number;
   } | null> {
     const task = await DownloadTask.findByPk(taskId);
 
@@ -950,6 +951,8 @@ export class DownloadService {
       task.expectedTrackCount ?? undefined
     );
 
+    const completenessConfig = config.slskd?.search?.completeness;
+
     return {
       task: {
         id:                 task.id,
@@ -958,8 +961,9 @@ export class DownloadService {
         searchQuery:        task.searchQuery || `${ task.artist } - ${ task.album }`,
         selectionExpiresAt: task.selectionExpiresAt || null,
       },
-      results: scoredResults,
+      results:              scoredResults,
       skippedUsernames,
+      minCompletenessRatio: completenessConfig?.min_completeness_ratio ?? 0.5,
     };
   }
 

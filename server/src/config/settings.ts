@@ -94,6 +94,14 @@ const SlskdCompletenessSchema = z.object({
   penalize_excess:      z.boolean().default(true),
   excess_decay_rate:    z.number().min(0).max(10)
     .default(2.0),
+}).superRefine((value, ctx) => {
+  if (value.require_complete && !value.enabled) {
+    ctx.addIssue({
+      code:    'custom',
+      message: 'completeness.enabled must be true when require_complete is true',
+      path:    ['require_complete'],
+    });
+  }
 });
 
 const SlskdSearchSchema = z.object({

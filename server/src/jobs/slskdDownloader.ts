@@ -147,6 +147,9 @@ export async function slskdDownloaderJob(): Promise<void> {
             await withDbWrite(() => task.update({ wishlistItemId: wishlistItem.id }));
           }
 
+          // TODO: Track count resolution must happen before processDownloadTask so that
+          // expectedTrackCount is available for completeness scoring. If this loop is
+          // refactored to run in parallel, ensure resolution still completes first.
           // Resolve expected track count if not yet set (album tasks only)
           if (task.expectedTrackCount == null && task.type === 'album') {
             try {

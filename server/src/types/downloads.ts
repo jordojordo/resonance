@@ -194,6 +194,7 @@ export const scoredSearchResponseSchema = z.object({
     uploadSpeed:       z.number().optional(),
   }),
   score:              z.number(),
+  scorePercent:       z.number(),
   scoreBreakdown:     scoreBreakdownSchema,
   musicFileCount:     z.number(),
   totalSize:          z.number(),
@@ -216,8 +217,9 @@ export const searchResultsResponseSchema = z.object({
     searchQuery:        z.string(),
     selectionExpiresAt: z.coerce.date().nullable(),
   }),
-  results:          z.array(scoredSearchResponseSchema),
-  skippedUsernames: z.array(z.string()),
+  results:              z.array(scoredSearchResponseSchema),
+  skippedUsernames:     z.array(z.string()),
+  minCompletenessRatio: z.number(),
 });
 
 export type SearchResultsResponse = z.infer<typeof searchResultsResponseSchema>;

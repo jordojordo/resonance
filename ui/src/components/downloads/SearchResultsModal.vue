@@ -71,6 +71,18 @@ const visibleResults = computed<ScoredSearchResponseWithSort[]>(() => {
 });
 
 const isLoading = computed(() => props.loading || loadingResults.value);
+const minCompletenessRatio = computed(() => searchResults.value?.minCompletenessRatio ?? 0.5);
+
+const dialogMobileStyle = computed(() => {
+  if (isMobile.value) {
+    return {
+      width:    '100vw',
+      maxWidth: '98vw',
+    };
+  }
+
+  return undefined;
+});
 
 watch(() => props.visible, async(newVisible) => {
   if (newVisible && props.taskId) {
@@ -225,7 +237,7 @@ function handleAutoSelect() {
     :modal="true"
     :closable="true"
     :draggable="false"
-    :style="{ width: isMobile ? '100vw' : '900px', maxWidth: '95vw' }"
+    :style="dialogMobileStyle"
     header="Select Download Source"
     @update:visible="handleClose"
   >
@@ -300,6 +312,19 @@ function handleAutoSelect() {
             <span v-else class="text-sm">{{ result.musicFileCount }} files</span>
             <span class="text-sm">{{ formatFileSize(result.totalSize) }}</span>
           </div>
+          <div v-if="result.scoreBreakdown" class="results-mobile__breakdown">
+            <button class="breakdown-toggle" @click="expandedRows[result.response.username] = !expandedRows[result.response.username]">
+              <i :class="expandedRows[result.response.username] ? 'pi pi-chevron-up' : 'pi pi-chevron-down'" />
+              Score breakdown ({{ Math.round(result.score) }} pts)
+            </button>
+            <div v-if="expandedRows[result.response.username]" class="score-breakdown">
+              <span v-if="result.scoreBreakdown.hasSlot" class="score-breakdown__item">Slot {{ result.scoreBreakdown.hasSlot }}</span>
+              <span v-if="result.scoreBreakdown.qualityScore != null" class="score-breakdown__item">Quality {{ Math.round(result.scoreBreakdown.qualityScore) }}</span>
+              <span v-if="result.scoreBreakdown.fileCountScore != null" class="score-breakdown__item">Files {{ Math.round(result.scoreBreakdown.fileCountScore) }}</span>
+              <span v-if="result.scoreBreakdown.uploadSpeedBonus > 0" class="score-breakdown__item">Speed {{ Math.round(result.scoreBreakdown.uploadSpeedBonus) }}</span>
+              <span v-if="result.scoreBreakdown.completenessScore > 0" class="score-breakdown__item">Completeness {{ Math.round(result.scoreBreakdown.completenessScore) }}</span>
+            </div>
+          </div>
           <div class="results-mobile__actions">
             <Button
               icon="pi pi-download"
@@ -348,7 +373,7 @@ function handleAutoSelect() {
         <Column header="Files" sortable sortField="musicFileCount">
           <template #body="{ data }">
             <template v-if="data.expectedTrackCount">
-              <span :class="data.musicFileCount >= data.expectedTrackCount ? 'completeness-complete' : (data.completenessRatio != null && data.completenessRatio < 0.5 ? 'completeness-low' : 'completeness-partial')">
+              <span :class="data.musicFileCount >= data.expectedTrackCount ? 'completeness-complete' : (data.completenessRatio != null && data.completenessRatio < minCompletenessRatio ? 'completeness-low' : 'completeness-partial')">
                 <i :class="data.musicFileCount >= data.expectedTrackCount ? 'pi pi-check-circle' : 'pi pi-exclamation-circle'" class="completeness-icon" />
                 {{ data.musicFileCount }}/{{ data.expectedTrackCount }}
               </span>
@@ -404,8 +429,8 @@ function handleAutoSelect() {
             <div v-if="data.scoreBreakdown" class="score-breakdown">
               <span class="score-breakdown__label">Score breakdown ({{ Math.round(data.score) }} pts):</span>
               <span v-if="data.scoreBreakdown.hasSlot" class="score-breakdown__item">Slot {{ data.scoreBreakdown.hasSlot }}</span>
-              <span class="score-breakdown__item">Quality {{ Math.round(data.scoreBreakdown.qualityScore) }}</span>
-              <span class="score-breakdown__item">Files {{ Math.round(data.scoreBreakdown.fileCountScore) }}</span>
+              <span v-if="data.scoreBreakdown.qualityScore != null" class="score-breakdown__item">Quality {{ Math.round(data.scoreBreakdown.qualityScore) }}</span>
+              <span v-if="data.scoreBreakdown.fileCountScore != null" class="score-breakdown__item">Files {{ Math.round(data.scoreBreakdown.fileCountScore) }}</span>
               <span v-if="data.scoreBreakdown.uploadSpeedBonus > 0" class="score-breakdown__item">Speed {{ Math.round(data.scoreBreakdown.uploadSpeedBonus) }}</span>
               <span v-if="data.scoreBreakdown.completenessScore > 0" class="score-breakdown__item">Completeness {{ Math.round(data.scoreBreakdown.completenessScore) }}</span>
             </div>
@@ -574,6 +599,34 @@ function handleAutoSelect() {
   color: var(--surface-400);
 }
 
+.results-mobile__breakdown {
+  border-top: 1px solid var(--surface-700);
+  padding-top: 0.5rem;
+}
+
+.results-mobile__breakdown .score-breakdown {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.breakdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--surface-400);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.5rem;
+}
+
+.breakdown-toggle:hover {
+  color: var(--surface-300);
+}
+
 .results-mobile__actions {
   display: flex;
   gap: 0.5rem;
@@ -643,5 +696,15 @@ function handleAutoSelect() {
   background: var(--primary-500);
   border-color: var(--primary-500);
   color: var(--r-text-primary);
+}
+
+@media (max-width: 768px) {
+  .results-mobile__card {
+    padding: 0.25rem;
+  }
+
+  .score-breakdown {
+    font-size: 0.75rem;
+  }
 }
 </style>

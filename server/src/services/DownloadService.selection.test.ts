@@ -271,20 +271,31 @@ describe('DownloadService Selection Workflow', () => {
       expect(completenessScore).toBe(0);
     });
 
-    it('exactnessScore prefers exact over overcomplete over incomplete', () => {
-      const exact       = { exactnessScore: 2, musicFileCount: 12 };
-      const overcomplete = { exactnessScore: 1, musicFileCount: 15 };
-      const incomplete   = { exactnessScore: 0, musicFileCount: 8 };
+    it('exactnessScore: 2 for exact match, 1 for overcomplete, 0 for incomplete', () => {
+      // Mirrors the logic in slskdDownloader.ts pickBestResponse (lines 696-704)
+      function computeExactnessScore(musicFileCount: number, expectedTrackCount: number): number {
+        if (expectedTrackCount <= 0) {
+          return 0;
+        }
+        if (musicFileCount === expectedTrackCount) {
+          return 2;
+        }
+        if (musicFileCount > expectedTrackCount) {
+          return 1;
+        }
 
-      // exact > overcomplete
-      expect(exact.exactnessScore).toBeGreaterThan(overcomplete.exactnessScore);
-      // overcomplete > incomplete
-      expect(overcomplete.exactnessScore).toBeGreaterThan(incomplete.exactnessScore);
+        return 0;
+      }
 
-      // In sort cascade, exactnessScore takes priority over musicFileCount
-      const result = overcomplete.exactnessScore - exact.exactnessScore;
+      expect(computeExactnessScore(12, 12)).toBe(2); // exact
+      expect(computeExactnessScore(15, 12)).toBe(1); // overcomplete
+      expect(computeExactnessScore(8, 12)).toBe(0);  // incomplete
+      expect(computeExactnessScore(0, 12)).toBe(0);  // no files
+      expect(computeExactnessScore(5, 0)).toBe(0);   // no expected count
 
-      expect(result).toBeLessThan(0); // exact wins
+      // Verify ordering: exact > overcomplete > incomplete
+      expect(computeExactnessScore(12, 12)).toBeGreaterThan(computeExactnessScore(15, 12));
+      expect(computeExactnessScore(15, 12)).toBeGreaterThan(computeExactnessScore(8, 12));
     });
   });
 
@@ -331,7 +342,7 @@ describe('DownloadService Selection Workflow', () => {
 
   describe('max score computation', () => {
     const QUALITY_SCORES = {
-      lossless: 1000, high: 500, standard: 200, low: 50, unknown: 100 
+      lossless: 1000, high: 500, standard: 200, low: 50, unknown: 100
     };
 
     function computeMaxScore(
