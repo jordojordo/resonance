@@ -1,8 +1,8 @@
-import {
-  describe, it, expect, vi, beforeEach, afterEach 
-} from 'vitest';
-
 import type { SimilarArtistResult, SimilarityProvider } from '@server/types/similarity';
+
+import {
+  describe, it, expect, vi, beforeEach, afterEach
+} from 'vitest';
 
 import { fetchSimilarFromAllProviders } from './catalogDiscovery';
 

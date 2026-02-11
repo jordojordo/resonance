@@ -8,12 +8,8 @@ import type {
 } from '@server/types/settings';
 
 import { BaseController } from '@server/controllers/BaseController';
-import {
-  getConfig,
-  updateConfig,
-  sanitizeConfigForApi,
-  sanitizeSectionForApi,
-} from '@server/config/settings';
+import { getConfig, updateConfig } from '@server/config/settings';
+import { sanitizeConfigForApi, sanitizeSectionForApi } from '@server/config/sanitize';
 import {
   SETTINGS_SECTIONS,
   SettingsSectionSchema,

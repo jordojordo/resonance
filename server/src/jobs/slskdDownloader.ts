@@ -9,10 +9,11 @@ import type { SlskdFile, SlskdSearchResponse } from '@server/types/slskd-client'
 import type { QueryContext } from '@server/types/search-query';
 
 import path from 'path';
-
 import { Op } from '@sequelize/core';
+
 import logger from '@server/config/logger';
-import { getConfig, SlskdSearchSettings } from '@server/config/settings';
+import type { SlskdSearchSettings } from '@server/config/schemas';
+import { getConfig } from '@server/config/settings';
 import { withDbWrite } from '@server/config/db';
 import DownloadTask from '@server/models/DownloadTask';
 import WishlistItem from '@server/models/WishlistItem';
@@ -20,8 +21,15 @@ import { DownloadService } from '@server/services/DownloadService';
 import { WishlistService } from '@server/services/WishlistService';
 import { SearchQueryBuilder } from '@server/services/SearchQueryBuilder';
 import { TrackCountService } from '@server/services/TrackCountService';
+import { buildQualityPreferences } from '@server/services/downloads/qualityPrefsBuilder';
 import { SlskdClient } from '@server/services/clients/SlskdClient';
 import { isJobCancelled } from '@server/plugins/jobs';
+import {
+  extractQualityInfo,
+  calculateAverageQualityScore,
+  shouldRejectFile,
+  getDominantQualityInfo,
+} from '@server/utils/audioQuality';
 
 import { JOB_NAMES } from '@server/constants/jobs';
 import {
@@ -33,16 +41,8 @@ import {
   MB_TO_BYTES,
   MUSIC_EXTENSIONS,
   QUALITY_SCORES,
-
   MAX_STORED_SELECTION_RESULTS,
 } from '@server/constants/slskd';
-import {
-  extractQualityInfo,
-  calculateAverageQualityScore,
-  shouldRejectFile,
-  getDominantQualityInfo,
-} from '@server/utils/audioQuality';
-import { buildQualityPreferences } from '@server/services/downloads/qualityPrefsBuilder';
 
 /**
  * Build SearchConfig from configuration settings.

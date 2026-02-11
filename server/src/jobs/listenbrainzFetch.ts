@@ -1,5 +1,5 @@
 import type { ListenBrainzRecommendation } from '@server/types/listenbrainz';
-import type { ListenBrainzSettings } from '@server/config/settings';
+import type { ListenBrainzSettings } from '@server/config/schemas';
 
 import logger from '@server/config/logger';
 import { JOB_NAMES } from '@server/constants/jobs';

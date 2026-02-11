@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import type { AuthSettings } from '@server/config/settings';
+import type { AuthSettings } from '@server/config/schemas';
 
 import crypto from 'crypto';
 import logger from '@server/config/logger';

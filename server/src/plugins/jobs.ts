@@ -10,12 +10,7 @@ import { catalogDiscoveryJob } from '@server/jobs/catalogDiscovery';
 import { slskdDownloaderJob } from '@server/jobs/slskdDownloader';
 import { librarySyncJob } from '@server/jobs/librarySync';
 import { libraryOrganizeJob } from '@server/jobs/libraryOrganize';
-import {
-  emitJobStarted,
-  emitJobCompleted,
-  emitJobFailed,
-  emitJobCancelled,
-} from '@server/plugins/io/namespaces/jobsNamespace';
+import { jobsNs } from '@server/plugins/io/namespaces';
 
 /**
  * Job definitions with name, cron schedule, and handler
@@ -92,7 +87,7 @@ function wrapJobHandler(job: JobDefinition): () => Promise<void> {
     const startTime = Date.now();
 
     // Emit job started event
-    emitJobStarted({
+    jobsNs.emitJobStarted({
       name:      job.name,
       startedAt: job.lastRun,
     });
@@ -104,10 +99,10 @@ function wrapJobHandler(job: JobDefinition): () => Promise<void> {
 
       if (job.aborted) {
         logger.info(`Job ${ job.name } was cancelled after ${ duration }ms`);
-        emitJobCancelled({ name: job.name });
+        jobsNs.emitJobCancelled({ name: job.name });
       } else {
         logger.info(`Job ${ job.name } completed in ${ duration }ms`);
-        emitJobCompleted({
+        jobsNs.emitJobCompleted({
           name: job.name,
           duration,
         });
@@ -117,10 +112,10 @@ function wrapJobHandler(job: JobDefinition): () => Promise<void> {
 
       if (job.aborted) {
         logger.info(`Job ${ job.name } cancelled:`, { error });
-        emitJobCancelled({ name: job.name });
+        jobsNs.emitJobCancelled({ name: job.name });
       } else {
         logger.error(`Job ${ job.name } failed:`, { error });
-        emitJobFailed({
+        jobsNs.emitJobFailed({
           name:  job.name,
           error: error instanceof Error ? error.message : String(error),
           duration,

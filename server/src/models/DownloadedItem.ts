@@ -1,4 +1,5 @@
 import type { PartialBy } from '@sequelize/utils';
+
 import { DataTypes, Model } from '@sequelize/core';
 import { sequelize } from '@server/config/db/sequelize';
 

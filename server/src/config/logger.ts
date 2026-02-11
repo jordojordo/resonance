@@ -1,12 +1,15 @@
 import { createLogger, format, transports } from 'winston';
 import fs from 'fs';
 import path from 'path';
+
 import { getDataPath } from './settings';
 
 type LogLevel = 'error' | 'warn' | 'info' | 'http' | 'verbose' | 'debug' | 'silly';
 
 function parseBooleanEnv(value: string | undefined): boolean | undefined {
-  if (value === undefined) return undefined;
+  if (value === undefined) {
+    return undefined;
+  }
 
   switch (value.trim().toLowerCase()) {
     case 'true':

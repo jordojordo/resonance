@@ -1,6 +1,7 @@
 import type { SimilarArtistResult, SimilarityProvider } from '@server/types/similarity';
 
 import { Op } from '@sequelize/core';
+
 import logger from '@server/config/logger';
 import { JOB_NAMES } from '@server/constants/jobs';
 import { getConfig } from '@server/config/settings';

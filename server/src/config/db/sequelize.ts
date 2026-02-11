@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import { Sequelize } from '@sequelize/core';
 import { SqliteDialect } from '@sequelize/sqlite3';
+
 import logger from '@server/config/logger';
 import { getDataPath } from '@server/config/settings';
 
