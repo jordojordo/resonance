@@ -27,7 +27,6 @@ export const useWishlistStore = defineStore('wishlist', () => {
   const settingsStore = useSettingsStore();
   const { uiPreferences } = storeToRefs(settingsStore);
 
-  // State
   const items = ref<WishlistEntryWithStatus[]>([]);
   const total = ref(0);
   const loading = ref(false);
@@ -50,7 +49,6 @@ export const useWishlistStore = defineStore('wishlist', () => {
     }
   );
 
-  // Computed
   const hasMore = computed(() => items.value.length < total.value);
   const selectedCount = computed(() => selectedIds.value.size);
   const allSelected = computed(() =>
@@ -58,7 +56,6 @@ export const useWishlistStore = defineStore('wishlist', () => {
   );
   const someSelected = computed(() => selectedIds.value.size > 0 && !allSelected.value);
 
-  // Selection helpers
   function isSelected(id: string): boolean {
     return selectedIds.value.has(id);
   }
@@ -87,12 +84,10 @@ export const useWishlistStore = defineStore('wishlist', () => {
     }
   }
 
-  // Processing helpers
   function isProcessing(id: string): boolean {
     return processingIds.value.has(id);
   }
 
-  // Fetch operations
   async function fetchWishlist(append = false) {
     loading.value = true;
     error.value = null;
@@ -116,7 +111,6 @@ export const useWishlistStore = defineStore('wishlist', () => {
     }
   }
 
-  // Update single item
   async function updateItem(id: string, data: UpdateWishlistRequest) {
     error.value = null;
     processingIds.value.add(id);
@@ -151,7 +145,6 @@ export const useWishlistStore = defineStore('wishlist', () => {
     }
   }
 
-  // Delete single item
   async function deleteItem(id: string) {
     error.value = null;
     processingIds.value.add(id);
@@ -176,7 +169,6 @@ export const useWishlistStore = defineStore('wishlist', () => {
     }
   }
 
-  // Bulk delete
   async function bulkDelete(ids?: string[]) {
     const targetIds = ids || Array.from(selectedIds.value);
 
@@ -207,7 +199,6 @@ export const useWishlistStore = defineStore('wishlist', () => {
     }
   }
 
-  // Bulk requeue
   async function bulkRequeue(ids?: string[]) {
     const targetIds = ids || Array.from(selectedIds.value);
 
@@ -246,7 +237,6 @@ export const useWishlistStore = defineStore('wishlist', () => {
     }
   }
 
-  // Export
   async function exportItems(format: ExportFormat, ids?: string[]) {
     try {
       const blob = await wishlistApi.exportWishlist(format, ids);
@@ -260,7 +250,6 @@ export const useWishlistStore = defineStore('wishlist', () => {
     }
   }
 
-  // Import
   async function importItems(importedItems: ImportItem[]) {
     try {
       const response = await wishlistApi.importWishlist(importedItems);
@@ -284,7 +273,6 @@ export const useWishlistStore = defineStore('wishlist', () => {
     }
   }
 
-  // Socket event handler
   function updateItemDownloadStatus(taskId: string, status: WishlistDownloadStatus, errorMessage?: string) {
     const item = items.value.find((i) => i.downloadTaskId === taskId);
 
@@ -297,7 +285,6 @@ export const useWishlistStore = defineStore('wishlist', () => {
     }
   }
 
-  // Filter management
   function setFilters(newFilters: Partial<WishlistFilters>) {
     filters.value = {
       ...filters.value,

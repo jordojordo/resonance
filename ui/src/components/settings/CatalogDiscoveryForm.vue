@@ -185,7 +185,7 @@ async function handleSave() {
       </div>
     </div>
 
-    <details class="settings-form__section" :open="form.enabled">
+    <details class="settings-form__section">
       <summary class="settings-form__section-title">Subsonic Server</summary>
       <div class="settings-form__grid settings-form__grid--with-margin">
         <div class="settings-form__field">
@@ -231,7 +231,7 @@ async function handleSave() {
       </div>
     </details>
 
-    <details class="settings-form__section" :open="form.enabled">
+    <details class="settings-form__section">
       <summary class="settings-form__section-title">Last.fm API</summary>
       <div class="settings-form__grid settings-form__grid--with-margin">
         <div class="settings-form__field">
@@ -261,7 +261,7 @@ async function handleSave() {
       </div>
     </details>
 
-    <details class="settings-form__section" :open="form.enabled">
+    <details class="settings-form__section">
       <summary class="settings-form__section-title">Discovery Settings</summary>
       <div class="settings-form__grid settings-form__grid--with-margin">
         <div class="settings-form__field">

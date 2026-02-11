@@ -115,7 +115,7 @@ Server tests use Vitest. Test files: `*.test.ts` or `*.spec.ts` in `src/` or `te
 
 ### Pacing & Review Checkpoints
 
-- **One file at a time.** Implement changes to a single file, then stop for review before moving to the next. Do not modify multiple files in a single response unless they are trivially coupled (e.g., a type definition and its single consumer).
+- **One file at a time.** Implement changes to a single file, then stop for review before moving to the next. Do not modify multiple files in a single response unless they are trivially coupled (e.g., a type definition and its single consumer). **Exception:** When using agent teams for batch refactors/features/fixes, teammates may work on multiple files in parallel within their assigned batch when necessary.
 
 - **100 line limit.** If a change exceeds ~100 lines, break it into smaller chunks. Stop and ask how to proceed.
 
