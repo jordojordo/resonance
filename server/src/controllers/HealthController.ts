@@ -1,13 +1,10 @@
 import type { Request, Response } from 'express';
 import type { HealthResponse } from '@server/types/responses';
 
-import { readFileSync } from 'fs';
-import { join } from 'path';
-
 import { BaseController } from '@server/controllers/BaseController';
 import logger from '@server/config/logger';
 
-const { version } = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf-8'));
+const version = process.env.APP_VERSION ?? 'dev';
 
 /**
  * Health check controller
