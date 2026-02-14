@@ -72,6 +72,8 @@ RUN pnpm --filter @deepcrate/server run build
 # =============================================================================
 FROM node:24-alpine AS production
 
+ARG APP_VERSION=dev
+
 WORKDIR /app
 
 # Make pnpm non-interactive
@@ -107,7 +109,8 @@ COPY --from=ui-builder /build/ui/dist ./static
 RUN apk del python3 make g++
 
 # Environment variables
-ENV NODE_ENV=production \
+ENV APP_VERSION=$APP_VERSION \
+    NODE_ENV=production \
     CONFIG_PATH=/config/config.yaml \
     DATA_PATH=/data \
     LOG_LEVEL=info \

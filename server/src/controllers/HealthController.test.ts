@@ -32,12 +32,7 @@ vi.mock('@server/plugins/jobs', () => ({
   isJobCancelled: vi.fn(),
 }));
 
-import { readFileSync } from 'fs';
-import { join } from 'path';
-
 import app from '@server/plugins/app';
-
-const { version } = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf-8'));
 
 describe('HealthController', () => {
   beforeEach(() => {
@@ -55,7 +50,7 @@ describe('HealthController', () => {
       expect(response.status).toBe(200);
       expect(response.body).toEqual({
         status:  'ok',
-        version,
+        version: 'dev',
         service: 'deepcrate',
       });
     });

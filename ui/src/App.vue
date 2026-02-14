@@ -65,7 +65,9 @@ function handleLogout(): void {
         </div>
         <div class="sidebar__branding">
           <span class="sidebar__title">DeepCrate</span>
-          <span v-if="appVersion" class="sidebar__version">v{{ appVersion }}</span>
+          <span v-if="appVersion && appVersion !== 'dev'" class="sidebar__version">
+            {{ `v${ appVersion }` }}
+          </span>
         </div>
       </RouterLink>
     </template>
